@@ -12,7 +12,7 @@ function love.conf(t)
 
     local major, minor, revision, codename = love.getVersion()
 
-    t.identity = "kristal"
+    t.identity = "samskristalfork"
     -- TODO: hmm
     t.version = "11.0"
 

@@ -256,6 +256,10 @@ function Draw.setColor(r, g, b, a)
     end
 end
 
+function Draw.resetColor()
+    Draw.setColor(1, 1, 1, 1)
+end
+
 ---@overload fun(drawable: love.Drawable, x?: number, y?: number, r?: number, sx?: number, sy?: number, ox?: number, oy?: number, kx?: number, ky?: number)
 ---@overload fun(texture: love.Texture, quad: love.Quad, x?: number, y?: number, r?: number, sx?: number, sy?: number, ox?: number, oy?: number, kx?: number, ky?: number)
 ---@overload fun(drawable: love.Drawable, transform: love.Transform)
@@ -375,6 +379,14 @@ function Draw.drawWrapped(drawable, wrap_x, wrap_y, x, y, r, sx, sy, ox, oy, kx,
     end
 end
 
+function Draw.print(text, x, y, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+    love.graphics.print(text, x, y, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+end
+
+function Draw.printf(text, x, y, limit, align, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+    love.graphics.printf(text, x, y, limit, align, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+end
+
 ---
 --- Draws text with a black drop shadow behind it.
 ---
@@ -394,12 +406,12 @@ function Draw.printShadow(text, x, y, offset, align, limit)
     local width = love.graphics.getFont():getWidth(Utils.getCombinedText(text))
 
     -- Draw the shadow, offset by a given amount of pixels to the bottom right
-    love.graphics.setColor(0, 0, 0, 1)
-    love.graphics.printf(text, x + offset, y + offset, limit or width, align or "left")
+    Draw.setColor(COLORS.black)
+    Draw.printf(text, x + offset, y + offset, limit or width, align or "left")
 
     -- Draw the main text
-    love.graphics.setColor(r, g, b, a)
-    love.graphics.printf(text, x, y, limit or width, align or "left")
+    Draw.setColor(r, g, b, a)
+    Draw.printf(text, x, y, limit or width, align or "left")
 end
 
 --- Modes: `none`

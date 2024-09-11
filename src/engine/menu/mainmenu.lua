@@ -116,7 +116,7 @@ function MainMenu:enter()
         state = "In the menu",
         details = "Main menu",
         largeImageKey = "logo",
-        largeImageText = "Kristal v" .. tostring(Kristal.Version),
+        largeImageText = "SamsKristalFork v" .. tostring(Kristal.Version),
         startTimestamp = os.time(),
         instance = 1
     })

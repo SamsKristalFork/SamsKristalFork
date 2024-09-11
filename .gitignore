@@ -11,3 +11,5 @@ build/
 output/
 
 *.tiled-session
+
+launch.bat
