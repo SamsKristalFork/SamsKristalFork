@@ -152,6 +152,9 @@ function love.load(args)
     ---@type string|nil
     PERFORMANCE_TEST_STAGE = nil
 
+    SCREENSHOT_DISPLAY = 1
+    TAKING_SCREENSHOT = false
+
     -- setup hooks
     Utils.hook(love, "update", function (orig, ...)
         if PERFORMANCE_TEST_STAGE == "UPDATE" then
@@ -241,6 +244,17 @@ function love.load(args)
             PERFORMANCE_TEST_STAGE = nil
             PERFORMANCE_TEST = nil
         end
+
+        local screenshot_size = Utils.lerp(20, 0, SCREENSHOT_DISPLAY)
+        if screenshot_size > 0 and not TAKING_SCREENSHOT then
+            local w = love.graphics.getWidth()
+            local h = love.graphics.getHeight()
+            love.graphics.rectangle("fill", 0, 0, screenshot_size, h)
+            love.graphics.rectangle("fill", w - screenshot_size, 0, screenshot_size, h)
+            love.graphics.rectangle("fill", 0, 0, w, screenshot_size)
+            love.graphics.rectangle("fill", 0, h - screenshot_size, w, screenshot_size)
+        end
+        TAKING_SCREENSHOT = false
     end)
 
     -- start load thread
@@ -329,6 +343,8 @@ function love.update(dt)
     Assets.update()
     TextInput.update()
 
+    SCREENSHOT_DISPLAY = Utils.approach(SCREENSHOT_DISPLAY, 1, 4 * dt)
+
     if Kristal.Loader.waiting > 0 then
         while Kristal.Loader.out_channel:getCount() > 0 do
             local msg = Kristal.Loader.out_channel:pop()
@@ -380,6 +396,7 @@ function love.mousepressed(win_x, win_y, button, istouch, presses)
     if Kristal.DebugSystem then
         Kristal.DebugSystem:onMousePressed(x, y, button, istouch, presses)
     end
+    Input.onMousePressed(x, y, button, istouch, presses)
     Kristal.callEvent(KRISTAL_EVENT.onMousePressed, x, y, button, istouch, presses)
 end
 
@@ -394,6 +411,7 @@ function love.mousereleased(x, y, button, istouch, presses)
     if Kristal.DebugSystem then
         Kristal.DebugSystem:onMouseReleased(x, y, button, istouch, presses)
     end
+    Input.onMouseReleased(x, y, button, istouch, presses)
     Kristal.callEvent(KRISTAL_EVENT.onMouseReleased, x, y, button, istouch, presses)
 end
 
@@ -471,6 +489,13 @@ function Kristal.onKeyPressed(key, is_repeat)
         elseif key == "f8" then
             print("Hotswapping files...\nNOTE: Might be unstable. If anything goes wrong, it's not our fault :P")
             Hotswapper.scan()
+        elseif key == "f9" then
+            love.filesystem.createDirectory("screenshots")
+            love.graphics.captureScreenshot("screenshots/" .. os.time() .. "-" .. RUNTIME .. ".png")
+            love.system.vibrate(0.1)
+            Assets.playSound("camera_flash")
+            SCREENSHOT_DISPLAY = 0
+            TAKING_SCREENSHOT = true
         elseif key == "r" and Input.ctrl() and not console_open then
             if Kristal.getModOption("hardReset") or Input.alt() and Input.shift() then
                 love.event.quit("restart")

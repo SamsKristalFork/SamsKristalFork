@@ -676,6 +676,13 @@ function Utils.containsValue(tbl, val)
     return false
 end
 
+function Utils.reverseTable(tbl)
+    for i = 1, math.floor(#tbl/2) do
+        tbl[i], tbl[#tbl - i + 1] = tbl[#tbl - i + 1], tbl[i]
+    end
+    return tbl
+end
+
 ---
 --- Rotates the values of a 2-dimensional array. \
 --- As an example, the following table:
@@ -1603,6 +1610,14 @@ end
 function Utils.dist(x1,y1, x2,y2)
     local dx, dy = x1-x2, y1-y2
     return math.sqrt(dx*dx + dy*dy)
+end
+
+function Utils.distInXDirection(len, dir)
+    return len*math.cos(dir)
+end
+
+function Utils.distInYDirection(len, dir)
+    return len*math.sin(dir)
 end
 
 ---

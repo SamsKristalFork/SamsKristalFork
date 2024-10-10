@@ -94,10 +94,11 @@ end
 
 --- Called at the start of a spell cast, manages internal functionality \
 --- Don't use this function for spell effects - see [`Spell:onCast()`](lua://Spell.onCast) instead
+--- ^ wrong
 ---@param user PartyBattler
 ---@param target Battler[]|EnemyBattler|PartyBattler|EnemyBattler[]|PartyBattler[]
 function Spell:onStart(user, target)
-    Game.battle:battleText(self:getCastMessage(user, target))
+    Game.battle:showText(self:getCastMessage(user, target))
     user:setAnimation("battle/spell", function()
         Game.battle:clearActionIcon(user)
         local result = self:onCast(user, target)

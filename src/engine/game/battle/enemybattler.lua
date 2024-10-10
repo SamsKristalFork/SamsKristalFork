@@ -94,13 +94,12 @@ function EnemyBattler:init(actor, use_overlay)
 
     self.disable_mercy = false
 
-    self.done_state = nil
-
     self.waves = {}
 
     self.check = "Remember to change\nyour check text!"
 
     self.text = {}
+    self.dialogue = {}
 
     self.low_health_text = nil
     self.tired_text = nil
@@ -109,14 +108,12 @@ function EnemyBattler:init(actor, use_overlay)
     self.tired_percentage = 0.5
     self.low_health_percentage = 0.5
 
-    -- This is set to nil in `battler.lua` as well, but it's here for completion's sake.
-
     -- Speech bubble style - defaults to "round" or "cyber", depending on chapter
-    self.dialogue_bubble = nil
+    self.dialogue_bubble_style = nil
 
     self.dialogue_offset = {0, 0}
 
-    self.dialogue = {}
+    self.comment = ""
 
     self.acts = {
         {
@@ -126,12 +123,58 @@ function EnemyBattler:init(actor, use_overlay)
         }
     }
 
-    self.hurt_timer = 0
-    self.comment = ""
-    self.icons = {}
-    self.defeated = false
+    self.damage_numbers = {}
+    self.damage_number_offset = {0, 0}
 
+    self.damage_sprites = {}
+    self.damage_sprite_offset = {0, 0}
+
+    self.icons = {}
+
+    self.hurt_timer = 0
+    self.defeated = false
+    self.done_state = nil
     self.current_target = "ANY"
+end
+
+function EnemyBattler:getDamageSpriteOffset()
+    return unpack(self.damage_sprite_offset)
+end
+
+-- move these
+
+function EnemyBattler:createAttackSprite(battler, points, crit)
+    if battler.chara:beforeCreateAttackSprite(enemy, points, crit) then return end
+
+    local sprite = Sprite(battler.chara:getAttackSprite() or "effects/attack/cut")
+    sprite:setOrigin(0.5)
+    if crit then
+        sprite:setScale(2.5)
+    else
+        sprite:setScale(2)
+    end
+    local ox, oy = self:getDamageSpriteOffset()
+    sprite:setPosition(self:getRelativePos((self.width / 2) + ox, (self.height / 2) + oy))
+    sprite.layer = self.layer + 0.01
+    table.insert(self.damage_sprites, sprite)
+    sprite:play(1/15, false, function()
+        Utils.removeFromTable(self.damage_sprites, sprite)
+        sprite:remove()
+    end)
+    self.parent:addChild(sprite)
+
+    battler.chara:onCreateAttackSprite(sprite, enemy, points, crit)
+end
+
+function EnemyBattler:playDamageSound()
+    local sound = self:getDamageSound() or "damage"
+    if sound and type(sound) == "string" then
+        Assets.stopAndPlaySound(sound)
+    end
+end
+
+function EnemyBattler:giveAttackTension(battler, points)
+    Game:giveTension(Utils.round(self:getAttackTension(points or 100)))
 end
 
 ---@param bool boolean
@@ -145,7 +188,7 @@ function EnemyBattler:setTired(bool)
 end
 
 --- Registers a new ACT for this enemy. This function is best called in [`EnemyBattler:init()`](lua://EnemyBattler.init) for most acts, unless they only appear under specific conditions. \
---- What happens when this act is used is controlled by [`EnemyBattler:onAct()`](lua://EnemyBattler.onAct) - acts that do not return text there will **softlock** Kristal.
+--- What happens when this act is used is controlled by [`EnemyBattler:onACT()`](lua://EnemyBattler.onAct) - acts that do not return text there will **softlock** Kristal.
 ---@param name          string          The name of the act
 ---@param description?  string          The short description of the act that appears in the menu
 ---@param party?        string[]|string A list of party member ids required to use this act. Alternatively, the keyword `"all"` can be used to insert the entire current party
@@ -153,7 +196,7 @@ end
 ---@param highlight?    Battler[]       A list of battlers that will be highlighted when the act is used, overriding default highlighting logic             
 ---@param icons?        string[]        A list of texture paths to icons that will display next to the name of this act (party member heads are drawn automatically as required)
 ---@return table act    The data of the act, also added to the `acts` table
-function EnemyBattler:registerAct(name, description, party, tp, highlight, icons)
+function EnemyBattler:registerACT(name, description, party, tp, highlight, icons)
     if type(party) == "string" then
         if party == "all" then
             party = {}
@@ -179,7 +222,7 @@ function EnemyBattler:registerAct(name, description, party, tp, highlight, icons
 end
 
 --- Registers a new Short ACT for this enemy. This function is best called in [`EnemyBattler:init()`](lua://EnemyBattler.init) for most acts, unless they only appear under specific conditions. \
---- What happens when this act is used is controlled by [`EnemyBattler:onShortAct()`](lua://EnemyBattler.onShortAct) - acts that do not return text there will **softlock** Kristal.
+--- What happens when this act is used is controlled by [`EnemyBattler:onShortACT()`](lua://EnemyBattler.onShortACT) - acts that do not return text there will **softlock** Kristal.
 ---@param name          string          The name of the act
 ---@param description?  string          The short description of the act that appears in the menu
 ---@param party?        string[]|string A list of party member ids required to use this act. Alternatively, the keyword `"all"` can be used to insert the entire current party
@@ -187,7 +230,7 @@ end
 ---@param highlight?    Battler[]       A list of battlers that will be highlighted when the act is used, overriding default highlighting logic             
 ---@param icons?        string[]        A list of texture paths to icons that will display next to the name of this act (party member heads are drawn automatically as required)
 ---@return table act    The data of the act, also added to the `acts` table
-function EnemyBattler:registerShortAct(name, description, party, tp, highlight, icons)
+function EnemyBattler:registerShortACT(name, description, party, tp, highlight, icons)
     if type(party) == "string" then
         if party == "all" then
             party = {}
@@ -213,7 +256,7 @@ function EnemyBattler:registerShortAct(name, description, party, tp, highlight, 
 end
 
 --- Registers a new ACT for this enemy that is usable by a specific character. This function is best called in [`EnemyBattler:init()`](lua://EnemyBattler.init) for most acts, unless they only appear under specific conditions. \
---- What happens when this act is used is controlled by [`EnemyBattler:onAct()`](lua://EnemyBattler.onAct) - acts that do not return text there will **softlock** Kristal.
+--- What happens when this act is used is controlled by [`EnemyBattler:onACT()`](lua://EnemyBattler.onAct) - acts that do not return text there will **softlock** Kristal.
 ---@param char          string          The id of the character that can use this act
 ---@param name          string          The name of the act
 ---@param description?  string          The short description of the act that appears in the menu
@@ -221,7 +264,7 @@ end
 ---@param tp?           number          An amount of TP required to use this act
 ---@param highlight?    Battler[]       A list of battlers that will be highlighted when the act is used, overriding default highlighting logic             
 ---@param icons?        string[]        A list of texture paths to icons that will display next to the name of this act (party member heads are drawn automatically as required)
-function EnemyBattler:registerActFor(char, name, description, party, tp, highlight, icons)
+function EnemyBattler:registerACTFor(char, name, description, party, tp, highlight, icons)
     if type(party) == "string" then
         if party == "all" then
             party = {}
@@ -246,7 +289,7 @@ function EnemyBattler:registerActFor(char, name, description, party, tp, highlig
 end
 
 --- Registers a new Short ACT for this enemy, usable by a specific character. This function is best called in [`EnemyBattler:init()`](lua://EnemyBattler.init) for most acts, unless they only appear under specific conditions. \
---- What happens when this act is used is controlled by [`EnemyBattler:onShortAct()`](lua://EnemyBattler.onShortAct) - acts that do not return text there will **softlock** Kristal.
+--- What happens when this act is used is controlled by [`EnemyBattler:onShortACT()`](lua://EnemyBattler.onShortACT) - acts that do not return text there will **softlock** Kristal.
 ---@param char          string          The id of the character that can use this act
 ---@param name          string          The name of the act
 ---@param description?  string          The short description of the act that appears in the menu
@@ -254,7 +297,7 @@ end
 ---@param tp?           number          An amount of TP required to use this act
 ---@param highlight?    Battler[]       A list of battlers that will be highlighted when the act is used, overriding default highlighting logic             
 ---@param icons?        string[]        A list of texture paths to icons that will display next to the name of this act (party member heads are drawn automatically as required)
-function EnemyBattler:registerShortActFor(char, name, description, party, tp, highlight, icons)
+function EnemyBattler:registerShortACTFor(char, name, description, party, tp, highlight, icons)
     if type(party) == "string" then
         if party == "all" then
             party = {}
@@ -292,8 +335,7 @@ end
 ---@param pacify?   boolean Whether the enemy was defeated by pacifying them rather than sparing them (defaults to `false`)
 function EnemyBattler:spare(pacify)
     if self.exit_on_defeat then
-        Game.battle.spare_sound:stop()
-        Game.battle.spare_sound:play()
+        Assets.stopAndPlaySound("spare")
 
         local spare_flash = self:addFX(ColorMaskFX())
         spare_flash.amount = 0
@@ -497,7 +539,7 @@ end
 --- *(Override)* Gets the dialogue the enemy should say each turn.
 --- *By default, picks a random dialogue from [`dialogue`](lua://EnemyBattler.dialogue) unless [`dialogue_override`](lua://EnemyBattler.dialogue_override) is set.
 ---@return string[]|string?
-function EnemyBattler:getEnemyDialogue()
+function EnemyBattler:getDialogue()
     if self.dialogue_override then
         local dialogue = self.dialogue_override
         self.dialogue_override = nil
@@ -537,7 +579,7 @@ function EnemyBattler:onCheck(battler) end
 --- *By default, sets the sprties of all battlers involved in the act to `"battle/act"`
 ---@param battler PartyBattler  The battler using this act - if it is a multi-act, this only specifies the one who used the command
 ---@param name string           The name of the act used
-function EnemyBattler:onActStart(battler, name)
+function EnemyBattler:onACTStart(battler, name)
     battler:setAnimation("battle/act")
     local action = Game.battle:getCurrentAction()
     if action.party then
@@ -547,13 +589,13 @@ function EnemyBattler:onActStart(battler, name)
     end
 end
 
---- *(Override)* Called when an ACT (including X-Acts, excluding short acts, see [`EnemyBattler:onShortAct()`](lua://EnemyBattler.onShortAct)) is used on this enemy - This function should be overriden to define behaviour for every act \
+--- *(Override)* Called when an ACT (including X-Acts, excluding short acts, see [`EnemyBattler:onShortACT()`](lua://EnemyBattler.onShortACT)) is used on this enemy - This function should be overriden to define behaviour for every act \
 --- *By default, manages the `"Check"` act - call `super.onAct(self, battler, name)` in any override to ensure Check is still handled* \
 --- *Acts will **softlock** Kristal if a string value or table is not returned by this function when they are used*
 ---@param battler   PartyBattler
 ---@param name      string
 ---@return string[]|string text
-function EnemyBattler:onAct(battler, name)
+function EnemyBattler:onACT(battler, name)
     if name == "Check" then
         self:onCheck(battler)
         if type(self.check) == "table" then
@@ -572,11 +614,11 @@ function EnemyBattler:onAct(battler, name)
     end
 end
 
---- *(Override)* Called when a short ACT is used, functions identically to [`EnemyBattler:onAct()`](lua://EnemyBattler.onAct) but for short acts
+--- *(Override)* Called when a short ACT is used, functions identically to [`EnemyBattler:onACT()`](lua://EnemyBattler.onAct) but for short acts
 ---@param battler   PartyBattler
 ---@param name      string
 ---@return string[]|string text
-function EnemyBattler:onShortAct(battler, name) end
+function EnemyBattler:onShortACT(battler, name) end
 
 --- *(Override)* Called at the start of every new turn in battle
 function EnemyBattler:onTurnStart() end
@@ -618,7 +660,7 @@ end
 function EnemyBattler:hurt(amount, battler, on_defeat, color, show_status, attacked)
     if amount == 0 or (amount < 0 and Game:getConfig("damageUnderflowFix")) then
         if show_status ~= false then
-            self:statusMessage("msg", "miss", color or (battler and {battler.chara:getDamageColor()}))
+            self:statusMessage("msg", "miss", color or (battler and {battler.chara:getEnemyDamageColor()}))
         end
 
         self:onDodge(battler, attacked)
@@ -627,7 +669,7 @@ function EnemyBattler:hurt(amount, battler, on_defeat, color, show_status, attac
 
     self.health = self.health - amount
     if show_status ~= false then
-        self:statusMessage("damage", amount, color or (battler and {battler.chara:getDamageColor()}))
+        self:statusMessage("damage", amount, color or (battler and {battler.chara:getEnemyDamageColor()}))
     end
 
     if amount > 0 then

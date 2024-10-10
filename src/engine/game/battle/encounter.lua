@@ -23,7 +23,7 @@ local Encounter = Class()
 
 function Encounter:init()
     -- Text that will be displayed when the battle starts
-    self.text = "* A skirmish breaks out!"
+    self.first_text = "* A skirmish breaks out!"
 
     -- Whether the default grid background is drawn
     self.background = true
@@ -34,7 +34,12 @@ function Encounter:init()
     self.music = "battle"
 
     -- Whether characters have the X-Action option in their spell menu
-    self.default_xactions = Game:getConfig("partyActions")
+    self.default_x_actions = Game:getConfig("partyActions")
+
+    self.enemy_base_x = 550
+    self.enemy_base_y = 200
+    self.enemy_x_separation = 10
+    self.enemy_y_separation = 45
 
     -- Should the battle skip the YOU WON! text?
     self.no_end_message = false
@@ -44,6 +49,8 @@ function Encounter:init()
 
     -- A copy of Battle.defeated_enemies, used to determine how an enemy has been defeated.
     self.defeated_enemies = nil
+
+    self.x_actions = {}
 end
 
 -- Callbacks
@@ -70,7 +77,7 @@ function Encounter:onActionsEnd() end
 --- *(Override)* Called when a character's turn selecting actions begins.
 ---@param battler   PartyBattler    The battler whose turn it is.
 ---@param undo      boolean         Whether this character's turn was entered by undoing their previously selected action.
-function Encounter:onCharacterTurn(battler, undo) end
+function Encounter:onPartyTurn(battler, index, undo) end
 
 --- *(Override)* Called when [`Battle:setState()`](lua://Battle.setState) is called. \
 --- *Changing the state to something other than `new`, or returning `true` will stop the standard state change code for this state change from occurring.*
@@ -86,7 +93,7 @@ function Encounter:onStateChange(old, new) end
 --- *(Override)* Called when an [`ActionButton`](lua://ActionButton.init) is selected.
 ---@param battler   PartyBattler
 ---@param button    ActionButton
-function Encounter:onActionSelect(battler, button) end
+function Encounter:onActionButtonSelect(battler, button) end
 
 --- *(Override)* Called when an item in a menu is selected (confirm key pressed).
 ---@param state_reason string       The current value of [`Battle.state_reason`](lua://Battle.state_reason)
@@ -146,65 +153,58 @@ function Encounter:update() end
 --- *(Override)* Called before anything has been rendered each frame. Usable to draw custom backgrounds for specific encounters.
 ---@param fade number   The opacity of the background when fading in/out of the world.
 function Encounter:draw(fade) end
---- *(Override)* Called after everything has been rendered each frame. Usable to draw custom effects for specific encounters.
----@param fade number   The opacity of the background when fading in/out of the world.
-function Encounter:drawBackground(fade) end
+
+function Encounter:createBackground()
+    return BattleBackground()
+end
 
 -- Functions
 
---- Adds an enemy to the encounter.
----@param enemy string|EnemyBattler The id of an `EnemyBattler`, or an `EnemyBattler` instance.
----@param x? number
----@param y? number
----@param ... any   Additional arguments to pass to [`EnemyBattler:init()`](lua://EnemyBattler.init).
----@return EnemyBattler
 function Encounter:addEnemy(enemy, x, y, ...)
-    local enemy_obj
     if type(enemy) == "string" then
-        enemy_obj = Registry.createEnemy(enemy, ...)
-    else
-        enemy_obj = enemy
+        enemy = Registry.createEnemy(enemy, ...)
     end
-    local enemies = self.queued_enemy_spawns
-    local enemies_index = enemies
-    local transition = false
-    if Game.battle and Game.state == "BATTLE" then
-        enemies = Game.battle.enemies
-        enemies_index = Game.battle.enemies_index
-        transition = Game.battle.state == "TRANSITION"
-    end
-    if transition then
-        enemy_obj:setPosition(SCREEN_WIDTH + 200, y)
-    end
-    if x and y then
-        enemy_obj.target_x = x
-        enemy_obj.target_y = y
-        if not transition then
-            enemy_obj:setPosition(x, y)
-        end
-    else
-        for _,enemy in ipairs(enemies) do
-            enemy.target_x = enemy.target_x - 10
-            enemy.target_y = enemy.target_y - 45
-            if not transition then
-                enemy.x = enemy.x - 10
-                enemy.y = enemy.y - 45
+    enemy.encounter = self
+    table.insert(self.queued_enemy_spawns, {enemy_object = enemy, x = x, y = y})
+    return enemy
+end
+
+function Encounter:getEnemyPosition(index)
+    return self.enemy_base_x + (self.enemy_x_separation * (index - 1)), self.enemy_base_y + (self.enemy_y_separation * (index - 1))
+end
+
+function Encounter:alignEnemiesInTransition(enemies)
+    if Game.state == "BATTLE" and Game.battle then
+        for i, enemy in ipairs(enemies) do
+            local target_x, target_y = self:getEnemyPosition(i)
+            
+            for j = 1, #enemies - i do
+                target_x = target_x - self.enemy_x_separation
+                target_y = target_y - self.enemy_y_separation
             end
-        end
-        local x, y = 550 + (10 * #enemies), 200 + (45 * #enemies)
-        enemy_obj.target_x = x
-        enemy_obj.target_y = y
-        if not transition then
-            enemy_obj:setPosition(x, y)
+    
+            Game.battle.transition_targets.enemies[enemy] = {target_x, target_y}
+            enemy.x = SCREEN_WIDTH + 200
         end
     end
-    enemy_obj.encounter = self
-    table.insert(enemies, enemy_obj)
-    table.insert(enemies_index, enemy_obj)
-    if Game.battle and Game.state == "BATTLE" then
-        Game.battle:addChild(enemy_obj)
+end
+
+function Encounter:alignEnemies(enemies)
+    enemies = enemies or self.queued_enemy_spawns
+
+    -- this is dumb
+    for i, enemy in ipairs(enemies) do
+        enemy.x, enemy.y = self:getEnemyPosition(i)
+
+        for j = 1, #enemies - i do
+            enemy.x = enemy.x - self.enemy_x_separation
+            enemy.y = enemy.y - self.enemy_y_separation
+        end
     end
-    return enemy_obj
+end
+
+function Encounter:getFirstEncounterText()
+    return self.first_text
 end
 
 --- *(Override)* Called to receive the encounter text to be displayed each turn. (Not called on turn one, [`text`](lua://Encounter.text) is used instead.) \
@@ -292,15 +292,9 @@ function Encounter:getSoulSpawnLocation()
     return -9, -9
 end
 
---- *(Override)* Called when enemy dialogue is finished and closed, before the transition into a wave.
-function Encounter:onDialogueEnd()
-    Game.battle:setState("DEFENDINGBEGIN")
-end
+function Encounter:onDialogueEnd() end
 
---- *(Override)* Called when all the waves of the current turn have finished.
-function Encounter:onWavesDone()
-    Game.battle:setState("DEFENDINGEND", "WAVEENDED")
-end
+function Encounter:onWavesDone() end
 
 --- *(Override)* Creates the soul being used this battle (Called at the start of the first wave)
 --- By default, returns the regular (red) soul.
@@ -310,6 +304,19 @@ end
 ---@return Soul
 function Encounter:createSoul(x, y, color)
     return Soul(x, y, color)
+end
+
+function Encounter:registerXAction(party, name, description, tp, highlight, extra)
+    local x_act = {
+        ["name"] = name,
+        ["description"] = description,
+        ["party"] = party,
+        ["color"] = {Game.battle.party[Game.battle:getPartyIndex(party)].chara:getXActColor()},
+        ["tp"] = tp or 0,
+        ["highlight"] = highlight,
+        ["short"] = false
+    }
+    table.insert(Utils.merge(self.x_actions, extra), x_act)
 end
 
 ---@return boolean

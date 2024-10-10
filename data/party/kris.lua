@@ -85,13 +85,13 @@ function character:init()
     -- Character color (for action box outline and hp bar)
     self.color = {0, 1, 1}
     -- Damage color (for the number when attacking enemies) (defaults to the main color)
-    self.dmg_color = {0.5, 1, 1}
+    self.enemy_damage_color = {0.5, 1, 1}
     -- Attack bar color (for the target bar used in attack mode) (defaults to the main color)
-    self.attack_bar_color = {0, 162/255, 232/255}
+    self.attack_target_color = {0, 162/255, 232/255}
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = {0, 0, 1}
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.xact_color = {0.5, 1, 1}
+    self.x_act_color = {0.5, 1, 1}
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/kris/head"
@@ -113,6 +113,9 @@ function character:init()
     self.head_icon_offset = nil
     -- Menu icon position offset (optional)
     self.menu_icon_offset = nil
+
+    -- Whether this character levels up even if they're not in the party
+    self.always_level_up = true
 
     -- Message shown on gameover (optional)
     self.gameover_message = nil

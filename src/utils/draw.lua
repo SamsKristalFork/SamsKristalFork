@@ -217,13 +217,21 @@ function Draw.scissorPoints(x1, y1, x2, y2)
     end
 end
 
+function Draw.setShader(...)
+    love.graphics.setShader(...)
+end
+
+function Draw.getShader()
+    love.graphics.getShader()
+end
+
 ---@param shader love.Shader|string
 ---@return love.Shader
 function Draw.pushShader(shader, vars)
     if type(shader) == "string" then
         shader = Kristal.Shaders[shader]
     end
-    table.insert(self._shader_stack, 1, love.graphics.getShader())
+    table.insert(self._shader_stack, 1, Draw.getShader())
     for k, v in pairs(vars) do
         if type(v) == "function" then
             shader:send(k, v())
@@ -231,12 +239,12 @@ function Draw.pushShader(shader, vars)
             shader:send(k, v)
         end
     end
-    love.graphics.setShader(shader)
+    Draw.setShader(shader)
     return shader
 end
 
 function Draw.popShader()
-    love.graphics.setShader(table.remove(self._shader_stack, 1))
+    Draw.setShader(table.remove(self._shader_stack, 1))
 end
 
 ---@param r? number
@@ -379,12 +387,30 @@ function Draw.drawWrapped(drawable, wrap_x, wrap_y, x, y, r, sx, sy, ox, oy, kx,
     end
 end
 
-function Draw.print(text, x, y, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
-    love.graphics.print(text, x, y, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+function Draw.setFont(...)
+    love.graphics.setFont(...)
 end
 
-function Draw.printf(text, x, y, limit, align, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
-    love.graphics.printf(text, x, y, limit, align, rotation, scale_x, scale_y, offset_x, offset_y, shear_x, shear_y)
+function Draw.print(...)
+    love.graphics.print(...)
+end
+
+function Draw.printf(...)
+    love.graphics.printf(...)
+end
+
+--printOutline w/shader
+
+function Draw.line(...)
+    love.graphics.line(...)
+end
+
+function Draw.setLineStyle(style)
+    love.graphics.setLineStyle(style)
+end
+
+function Draw.setLineWidth(width)
+    love.graphics.setLineWidth(width)
 end
 
 ---

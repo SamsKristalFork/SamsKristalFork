@@ -7,7 +7,7 @@
 ---@field chara         PartyMember The PartyMember this battler uses
 ---@field actor         Actor       The actor this battler uses
 ---
----@field action        table       The current action the battler has queued up
+----@field action        table       The current action the battler has queued up
 ---
 ---@field defending     boolean     Whether the battler is currently defending
 ---@field hurt_timer    number      How long this battler's hurt sprite should be displayed for when hit
@@ -39,8 +39,6 @@ function PartyBattler:init(chara, x, y)
 
     -- default to the idle animation, handle the battle intro elsewhere
     self:setAnimation("battle/idle")
-
-    self.action = nil
     
     self.defending = false
     self.hurt_timer = 16
@@ -58,6 +56,8 @@ function PartyBattler:init(chara, x, y)
     self:addChild(self.target_sprite)
 
     self.targeted = false
+
+    self.__action = nil
 end
 
 --- *(Override)*
@@ -342,8 +342,8 @@ function PartyBattler:getHeadIcon()
         return "sleep"
     elseif self.defending then
         return "defend"
-    elseif self.action and self.action.icon then
-        return self.action.icon
+    elseif self.__action and self.__action.icon then
+        return self.__action.icon
     elseif self.hurting then
         return "head_hurt"
     else

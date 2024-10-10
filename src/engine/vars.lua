@@ -23,6 +23,7 @@ TILE_HEIGHT = 40
 FOLLOW_DELAY = 0.4
 
 BATTLE_LAYERS = {
+    ["background"]     = -2000,
     ["bottom"]         = -1000,
     ["below_battlers"] = -200,
     ["battlers"]       = -100,
@@ -79,6 +80,7 @@ SHOP_LAYERS = {
     ["top"] = 1000
 }
 
+-- register functions?
 MUSIC_VOLUME = 0.7
 MUSIC_VOLUMES = {
     ["battle"] = 0.7
@@ -87,40 +89,48 @@ MUSIC_PITCHES = {}
 
 -- Colors used by the engine for various things, here for customizability
 local palette_data = {
-    ["battle_mercy_bg"] = { 255 / 255, 80 / 255, 32 / 255, 1 },
-    ["battle_mercy_text"] = { 128 / 255, 0, 0, 1 },
-    ["battle_attack_lines"] = { 0, 0, 0.5, 1 },
+    ["action_strip"]                 = { 51 / 255, 32 / 255, 51 / 255, 1 },
+    ["action_fill"]                  = { 0, 0, 0, 1 },
+    ["action_health_bg"]             = { 128 / 255, 0, 0, 1 },
+    ["action_health_text_down"]      = { 1, 0, 0, 1 },
+    ["action_health_text_low"]       = { 1, 1, 0, 1 },
+    ["action_health_text"]           = { 1, 1, 1, 1 },
+    ["action_health"]                = { 0, 1, 0, 1 },
 
-    ["world_fill"] = { 0, 0, 0, 1 },
-    ["world_border"] = { 1, 1, 1, 1 },
-    ["world_text"] = { 1, 1, 1, 1 },
-    ["world_text_selected"] = { 1, 1, 0, 1 },
-    ["world_text_hover"] = { 0, 1, 1, 1 },
-    ["world_text_rebind"] = { 1, 0, 0, 1 },
-    ["world_text_shadow"] = { 51 / 255, 32 / 255, 51 / 255, 1 },
-    ["world_text_unusable"] = { 192 / 255, 192 / 255, 192 / 255, 1 },
-    ["world_gray"] = { 128 / 255, 128 / 255, 128 / 255, 1 },
-    ["world_dark_gray"] = { 0.25, 0.25, 0.25, 1 },
-    ["world_light_gray"] = { 0.75, 0.75, 0.75, 1 },
-    ["world_header"] = { 1, 1, 1, 1 },
-    ["world_header_selected"] = { 255 / 255, 160 / 255, 64 / 255, 1 },
-    ["world_save_other"] = { 68 / 255, 68 / 255, 68 / 255, 1 },
-    ["world_ability_icon"] = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["world_fill"]                   = { 0, 0, 0, 1 },
+    ["world_border"]                 = { 1, 1, 1, 1 },
+    ["world_text"]                   = { 1, 1, 1, 1 },
+    ["world_text_selected"]          = { 1, 1, 0, 1 },
+    ["world_text_hover"]             = { 0, 1, 1, 1 },
+    ["world_text_rebind"]            = { 1, 0, 0, 1 },
+    ["world_text_shadow"]            = { 51 / 255, 32 / 255, 51 / 255, 1 },
+    ["world_text_unusable"]          = { 192 / 255, 192 / 255, 192 / 255, 1 },
+    ["world_gray"]                   = { 128 / 255, 128 / 255, 128 / 255, 1 },
+    ["world_dark_gray"]              = { 0.25, 0.25, 0.25, 1 },
+    ["world_light_gray"]             = { 0.75, 0.75, 0.75, 1 },
+    ["world_header"]                 = { 1, 1, 1, 1 },
+    ["world_header_selected"]        = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["world_save_other"]             = { 68 / 255, 68 / 255, 68 / 255, 1 },
+    ["world_ability_icon"]           = { 255 / 255, 160 / 255, 64 / 255, 1 },
 
-    ["action_strip"] = { 51 / 255, 32 / 255, 51 / 255, 1 },
-    ["action_fill"] = { 0, 0, 0, 1 },
-    ["action_health_bg"] = { 128 / 255, 0, 0, 1 },
-    ["action_health_text_down"] = { 1, 0, 0, 1 },
-    ["action_health_text_low"] = { 1, 1, 0, 1 },
-    ["action_health_text"] = { 1, 1, 1, 1 },
-    ["action_health"] = { 0, 1, 0, 1 },
+    ["battle_text"]                  = { 1, 1, 1, 1 },
+    ["battle_text_unusable"]         = { 0.5, 0.5, 0.5, 1 },
+    ["battle_description"]           = { 0.5, 0.5, 0.5, 1 },
+    ["battle_tension_description"]   = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["battle_invalid_icon"]          = { 0.5, 0.5, 0.5, 1 },
 
-    ["tension_back"] = { 128 / 255, 0, 0, 1 },
-    ["tension_decrease"] = { 1, 0, 0, 1 },
-    ["tension_fill"] = { 255 / 255, 160 / 255, 64 / 255, 1 },
-    ["tension_max"] = { 255 / 255, 208 / 255, 32 / 255, 1 },
-    ["tension_maxtext"] = { 1, 1, 0, 1 },
-    ["tension_desc"] = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["battle_mercy_bg"]              = { 255 / 255, 80 / 255, 32 / 255, 1 },
+    ["battle_mercy_unselectable_bg"] = { 127 / 255, 127 / 255, 127 / 255, 1},
+    ["battle_mercy_fill"]            = { 1, 1, 0, 1 },
+    ["battle_mercy_text"]            = { 128 / 255, 0, 0, 1 },
+    ["battle_attack_lines"]          = { 0, 0, 0.5, 1 },
+    ["battle_enemy_comment"]         = { 128 / 255, 128 / 255, 128 / 255, 1 },
+
+    ["tension_back"]                 = { 128 / 255, 0, 0, 1 },
+    ["tension_decrease"]             = { 1, 0, 0, 1 },
+    ["tension_fill"]                 = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["tension_max"]                  = { 255 / 255, 208 / 255, 32 / 255, 1 },
+    ["tension_maxtext"]              = { 1, 1, 0, 1 },
 }
 PALETTE = {}
 setmetatable(PALETTE, {
@@ -129,25 +139,25 @@ setmetatable(PALETTE, {
 })
 
 COLORS = {
-    aqua = { 0, 1, 1, 1 },
-    black = { 0, 0, 0, 1 },
-    blue = { 0, 0, 1, 1 },
-    dkgray = { 0.25, 0.25, 0.25, 1 },
+    aqua    = { 0, 1, 1, 1 },
+    black   = { 0, 0, 0, 1 },
+    blue    = { 0, 0, 1, 1 },
+    dkgray  = { 0.25, 0.25, 0.25, 1 },
     fuchsia = { 1, 0, 1, 1 },
-    gray = { 0.5, 0.5, 0.5, 1 },
-    green = { 0, 0.5, 0, 1 },
-    lime = { 0, 1, 0, 1 },
-    ltgray = { 0.75, 0.75, 0.75, 1 },
-    maroon = { 0.5, 0, 0, 1 },
-    navy = { 0, 0, 0.5, 1 },
-    olive = { 0.5, 0.5, 0, 1 },
-    orange = { 1, 0.625, 0.25, 1 },
-    purple = { 0.5, 0, 0.5, 1 },
-    red = { 1, 0, 0, 1 },
-    silver = { 0.75, 0.75, 0.75, 1 },
-    teal = { 0, 0.5, 0.5, 1 },
-    white = { 1, 1, 1, 1 },
-    yellow = { 1, 1, 0, 1 }
+    gray    = { 0.5, 0.5, 0.5, 1 },
+    green   = { 0, 0.5, 0, 1 },
+    lime    = { 0, 1, 0, 1 },
+    ltgray  = { 0.75, 0.75, 0.75, 1 },
+    maroon  = { 0.5, 0, 0, 1 },
+    navy    = { 0, 0, 0.5, 1 },
+    olive   = { 0.5, 0.5, 0, 1 },
+    orange  = { 1, 0.625, 0.25, 1 },
+    purple  = { 0.5, 0, 0.5, 1 },
+    red     = { 1, 0, 0, 1 },
+    silver  = { 0.75, 0.75, 0.75, 1 },
+    teal    = { 0, 0.5, 0.5, 1 },
+    white   = { 1, 1, 1, 1 },
+    yellow  = { 1, 1, 0, 1 }
 }
 for _, v in pairs(COLORS) do
     setmetatable(v, { __call = function (c, a) return { c[1], c[2], c[3], a or 1 } end })
@@ -156,6 +166,8 @@ end
 ALPHABET = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
     "v", "w", "x", "y", "z" }
 FACINGS = { "right", "down", "left", "up" }
+
+-- put these in a table, maybe in ChaserEnemy?
 
 -- Different chase types that can be used by ChaserEnemys.
 CHASETYPE = { "linear", "multiplier", "flee" }
@@ -221,7 +233,7 @@ KRISTAL_EVENT = {
     getSoulColor = "getSoulColor", -- intercept rgba soul color value / at: Game:getSoulColor() / passes: NONE / returns nil|table
 
     --battle events--
-    onActionSelect = "onActionSelect", -- overrides action button selection / at: ActionButton:select() / passes: Battler:battler, ActionButton:self / returns: bool
+    onActionButtonSelect = "onActionButtonSelect", -- overrides action button selection / at: ActionButton:select() / passes: Battler:battler, ActionButton:self / returns: bool
     onBattleActionBegin = "onBattleActionBegin", -- overrides begin action / at: Battle:beginAction(action) / passes: table:action, string:action_type,  PartyBattler:battler, Battler:enemy / returns: bool
     onBattleActionCommit = "onBattleActionCommit", -- overrides commit action / at: Battle:commitSingleAction(action) / passes: table:action, string:action_type,  PartyBattler:battler, Battler:enemy / returns: bool
     onBattleActionEnd = "onBattleActionEnd", -- battlers finishes any action / at: Battle:commitSingleAction(action) / passes: table:action, string:action_type,  PartyBattler:battler, Battler:enemy / returns: NONE

@@ -136,14 +136,14 @@ function DebugSystem:onMousePressed(x, y, button, istouch, presses)
                     if Game.world then
                         if Game.world.player then
                             self.context:addMenuItem("Teleport", "Teleport the player to\nthe current position.",
-                                                     function ()
+                                                     function()
                                                          Game.world.player:setScreenPos(Input.getCurrentCursorPosition())
                                                          Game.world.player:interpolateFollowers()
                                                          self:selectObject(Game.world.player)
                                                      end)
                         else
                             self.context:addMenuItem("Spawn player", "Spawn the player at the\ncurrent position.",
-                                                     function ()
+                                                     function()
                                                          Game.world:spawnPlayer(0, 0, Game.party[1]:getActor())
                                                          Game.world.player:setScreenPos(Input.getCurrentCursorPosition())
                                                          Game.world.player:interpolateFollowers()
@@ -152,11 +152,11 @@ function DebugSystem:onMousePressed(x, y, button, istouch, presses)
                         end
                     end
                     if self.copied_object then
-                        self.context:addMenuItem("Paste", "Paste the copied object.", function ()
+                        self.context:addMenuItem("Paste", "Paste the copied object.", function()
                             self:pasteObject()
                         end)
                     end
-                    self.context:addMenuItem("Select object", "Select an object by name.", function ()
+                    self.context:addMenuItem("Select object", "Select an object by name.", function()
                         self.window = DebugWindow("Select Object", "Enter the name of the object to select.", "input",
                                                   function (text)
                                                       local stage = self:getStage()
@@ -297,9 +297,9 @@ function DebugSystem:detectObject(x, y)
 end
 
 function DebugSystem:registerConfigOption(menu, name, description, value, callback)
-    self:registerOption(menu, name, function ()
+    self:registerOption(menu, name, function()
                             return self:appendBool(description, Kristal.Config[value])
-                        end, function ()
+                        end, function()
                             Kristal.Config[value] = not Kristal.Config[value]
                             if callback then
                                 callback()
@@ -468,49 +468,49 @@ end
 function DebugSystem:registerSubMenus()
     self:registerMenu("engine_options", "Engine Options")
     self:registerConfigOption("engine_options", "Show FPS", "Toggle the FPS display.", "showFPS")
-    self:registerOption("engine_options", "Target FPS", function ()
+    self:registerOption("engine_options", "Target FPS", function()
                             local fps_text = Kristal.Config["fps"] > 0 and tostring(Kristal.Config["fps"]) or "Unlimited"
                             return "Set the target FPS. (" .. fps_text .. ")"
-                        end, function ()
+                        end, function()
                             self:enterMenu("engine_option_fps", 1)
                         end)
-    self:registerConfigOption("engine_options", "VSync", "Toggle Vsync.", "vSync", function ()
+    self:registerConfigOption("engine_options", "VSync", "Toggle Vsync.", "vSync", function()
         love.window.setVSync(Kristal.Config["vSync"] and 1 or 0)
     end)
     self:registerConfigOption("engine_options", "Frame Skip", "Toggle frame skipping.", "frameSkip")
     self:registerOption("engine_options", "Print Performance", "Show performance in the console.",
-                        function () PERFORMANCE_TEST_STAGE = "UPDATE" end)
+                        function() PERFORMANCE_TEST_STAGE = "UPDATE" end)
     self:registerOption("engine_options", "Force GC", "Force a garbage collection.",
-                        function () collectgarbage("collect") end)
-    self:registerOption("engine_options", "Force Crash", "Force a crash.", function () error("Debug crash!") end)
-    self:registerOption("engine_options", "Back", "Go back to the previous menu.", function () self:returnMenu() end)
+                        function() collectgarbage("collect") end)
+    self:registerOption("engine_options", "Force Crash", "Force a crash.", function() error("Debug crash!") end)
+    self:registerOption("engine_options", "Back", "Go back to the previous menu.", function() self:returnMenu() end)
 
     self:registerMenu("engine_option_fps", "Target FPS")
     self:registerOption("engine_option_fps", "Unlimited", "Set the target FPS to unlimited.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 0; FRAMERATE = 0
                         end)
     self:registerOption("engine_option_fps", "30", "Set the target FPS to 30.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 30; FRAMERATE = 30
                         end)
     self:registerOption("engine_option_fps", "60", "Set the target FPS to 60.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 60; FRAMERATE = 60
                         end)
     self:registerOption("engine_option_fps", "120", "Set the target FPS to 120.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 120; FRAMERATE = 120
                         end)
     self:registerOption("engine_option_fps", "144", "Set the target FPS to 144.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 144; FRAMERATE = 144
                         end)
     self:registerOption("engine_option_fps", "240", "Set the target FPS to 240.",
-                        function ()
+                        function()
                             Kristal.Config["fps"] = 240; FRAMERATE = 240
                         end)
-    self:registerOption("engine_option_fps", "Custom", "Set the target FPS to a custom value.", function ()
+    self:registerOption("engine_option_fps", "Custom", "Set the target FPS to a custom value.", function()
         self.window = DebugWindow("Enter FPS", "Enter the target FPS youd like.", "input", function (text)
             local fps = tonumber(text)
             if fps then
@@ -521,51 +521,51 @@ function DebugSystem:registerSubMenus()
         self.window:setPosition(Input.getCurrentCursorPosition())
         self:addChild(self.window)
     end)
-    self:registerOption("engine_option_fps", "Back", "Go back to the previous menu.", function () self:returnMenu() end)
+    self:registerOption("engine_option_fps", "Back", "Go back to the previous menu.", function() self:returnMenu() end)
     
     self:registerMenu("fast_forward", "Fast Forward")
     self:registerOption("fast_forward", "[Toggle]", 
-                        function () return self:appendBool("Speed up the engine.", FAST_FORWARD) end,
-                        function () FAST_FORWARD = not FAST_FORWARD end)
+                        function() return self:appendBool("Speed up the engine.", FAST_FORWARD) end,
+                        function() FAST_FORWARD = not FAST_FORWARD end)
     self:registerOption("fast_forward", "x0.05", "Set the fast forward speed to x0.05 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 0.05
                         end)
     self:registerOption("fast_forward", "x0.1", "Set the fast forward speed to x0.1 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 0.1
                         end)
     self:registerOption("fast_forward", "x0.2", "Set the fast forward speed to x0.2 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 0.2
                         end)
     self:registerOption("fast_forward", "x0.5", "Set the fast forward speed to x0.5 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 0.5
                         end)
     self:registerOption("fast_forward", "x1.5", "Set the fast forward speed to x1.5 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 1.5
                         end)
     self:registerOption("fast_forward", "x2", "Set the fast forward speed to x2 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 2
                         end)
     self:registerOption("fast_forward", "x5", "Set the fast forward speed to x5 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 5
                         end)
     self:registerOption("fast_forward", "x10", "Set the fast forward speed to x10 multiplier.",
-                        function ()
+                        function()
                             FAST_FORWARD_SPEED = 10
                         end)
-    self:registerOption("fast_forward", "Back", "Go back to the previous menu.", function () self:returnMenu() end)
+    self:registerOption("fast_forward", "Back", "Go back to the previous menu.", function() self:returnMenu() end)
 
     self:registerMenu("give_item", "Give Item", "search")
 
     for id, item_data in pairs(Registry.items) do
         local item = item_data()
-        self:registerOption("give_item", item.name + (item.light and " (Light Item)" or ""), item.description, function ()
+        self:registerOption("give_item", item.name + (item.light and " (Light Item)" or ""), item.description, function()
             Game.inventory:tryGiveItem(item_data())
         end)
     end
@@ -573,7 +573,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("select_map", "Select Map", "search")
     -- Registry.map_data instead of Registry.maps
     for id, _ in pairs(Registry.map_data) do
-        self:registerOption("select_map", id, "Teleport to this map.", function ()
+        self:registerOption("select_map", id, "Teleport to this map.", function()
             if Game.world.cutscene then
                 Game.world:stopCutscene()
             end
@@ -587,7 +587,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("encounter_select", "Encounter Select", "search")
     -- loop through registry and add menu options for all encounters
     for id, _ in pairs(Registry.encounters) do
-        self:registerOption("encounter_select", id, "Start this encounter.", function ()
+        self:registerOption("encounter_select", id, "Start this encounter.", function()
             Game:encounter(id)
             self:closeMenu()
         end)
@@ -595,7 +595,7 @@ function DebugSystem:registerSubMenus()
 
     self:registerMenu("select_shop", "Enter Shop", "search")
     for id, _ in pairs(Registry.shops) do
-        self:registerOption("select_shop", id, "Enter this shop.", function ()
+        self:registerOption("select_shop", id, "Enter this shop.", function()
             Game:enterShop(id)
             self:closeMenu()
         end)
@@ -604,7 +604,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("cutscene_select", "Cutscene Select", "search")
     
     -- add a cutscene stopper
-    self:registerOption("cutscene_select", "[Stop Current Cutscene]", "Stop the current playing cutscene.", function ()
+    self:registerOption("cutscene_select", "[Stop Current Cutscene]", "Stop the current playing cutscene.", function()
         if Game.world:hasCutscene() then
             Game.world:stopCutscene()
         end
@@ -615,7 +615,7 @@ function DebugSystem:registerSubMenus()
     for group, cutscene in pairs(Registry.world_cutscenes) do
         if type(cutscene) == "table" then
             for id, _ in pairs(cutscene) do
-                self:registerOption("cutscene_select", group .. "." .. id, "Start this cutscene.", function ()
+                self:registerOption("cutscene_select", group .. "." .. id, "Start this cutscene.", function()
                     if not Game.world:hasCutscene() then
                         Game.world:startCutscene(group, id)
                     end
@@ -623,7 +623,7 @@ function DebugSystem:registerSubMenus()
                 end)
             end
         else
-            self:registerOption("cutscene_select", group, "Start this cutscene.", function ()
+            self:registerOption("cutscene_select", group, "Start this cutscene.", function()
                 if not Game.world:hasCutscene() then
                     Game.world:startCutscene(group)
                 end
@@ -635,7 +635,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("legend_select", "Legend Select", "search")
 
     -- add a legend stopper
-    self:registerOption("legend_select", "[Stop Current Legend]", "Stop the current playing Legend.", function ()
+    self:registerOption("legend_select", "[Stop Current Legend]", "Stop the current playing Legend.", function()
         if Game.state == "LEGEND" then
             Game.legend.cutscene:onEnd()
         end
@@ -644,7 +644,7 @@ function DebugSystem:registerSubMenus()
 
     -- loop through registry and add menu options for all legends
     for cutscene, _ in pairs(Registry.legend_cutscenes) do
-        self:registerOption("legend_select", cutscene, "Start this legend.", function ()
+        self:registerOption("legend_select", cutscene, "Start this legend.", function()
             if Game.state ~= "LEGEND" then
                 Game:fadeIntoLegend(cutscene)
             end
@@ -655,7 +655,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("wave_select", "Wave Select", "search")
     
     -- add a wave stopper
-    self:registerOption("wave_select", "[Stop Current Wave]", "Stop the current playing wave.", function ()
+    self:registerOption("wave_select", "[Stop Current Wave]", "Stop the current playing wave.", function()
         if Game.battle:getState() == "DEFENDING" then
             Game.battle.encounter:onWavesDone()
         end
@@ -673,7 +673,7 @@ function DebugSystem:registerSubMenus()
     end)
 
     for _, id in ipairs(waves_list) do
-        self:registerOption("wave_select", id, "Start this wave.", function ()
+        self:registerOption("wave_select", id, "Start this wave.", function()
             if Game.battle:getState() == "ACTIONSELECT" then
                 Game.battle:setState("DEFENDINGBEGIN", { id })
             end
@@ -684,7 +684,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("sound_test", "Sound Test", "search")
 
     for id, _ in pairs(Assets.sounds) do
-        self:registerOption("sound_test", id, "Play this sound.", function ()
+        self:registerOption("sound_test", id, "Play this sound.", function()
             if self.playing_sound then
                 self.playing_sound:stop()
             end
@@ -695,7 +695,7 @@ function DebugSystem:registerSubMenus()
     self:registerMenu("change_party", "Change Party", "search")
 
     for id, _ in pairs(Registry.party_members) do
-        self:registerOption("change_party", id, "Add or remove this party member from the party.", function ()
+        self:registerOption("change_party", id, "Add or remove this party member from the party.", function()
             if (Game:hasPartyMember(id)) then
                 local char = Game.world:getPartyCharacterInParty(id)
                 local first_follower_char
@@ -725,34 +725,47 @@ function DebugSystem:registerSubMenus()
             end
         end)
     end
+
+    self:registerMenu("border_menu", "Border Test", "search")
+    
+    local borders = Utils.getFilesRecursive("assets/sprites/borders", ".png")
+    if Mod then
+        Utils.merge(borders, Utils.getFilesRecursive(Mod.info.path.."/assets/sprites/borders", ".png"))
+        for _,mod_lib in pairs(Mod.libs) do
+            Utils.merge(borders, Utils.getFilesRecursive(mod_lib.info.path.."/assets/sprites/borders", ".png"))
+        end
+    end
+    for _,border in ipairs(borders) do
+        self:registerOption("border_menu", border, "Switch to the border \"" .. border .. "\".", function() Game:setBorder(border) end)
+    end
 end
 
 function DebugSystem:registerDefaults()
-    local in_game = function () return Kristal.getState() == Game end
-    local in_battle = function () return in_game() and Game.state == "BATTLE" end
-    local in_overworld = function () return in_game() and Game.state == "OVERWORLD" end
+    local in_game = function() return Kristal.getState() == Game end
+    local in_battle = function() return in_game() and Game.state == "BATTLE" end
+    local in_overworld = function() return in_game() and Game.state == "OVERWORLD" end
     local in_legend = function() return in_game() and Game.state == "LEGEND" end
 
     -- Global
     self:registerConfigOption("main", "Object Selection Pausing",
                               "Pauses the game when the object selection menu is opened.", "objectSelectionSlowdown")
 
-    self:registerOption("main", "Engine Options", "Configure various noningame options.", function ()
+    self:registerOption("main", "Engine Options", "Configure various noningame options.", function()
         self:enterMenu("engine_options", 1)
     end)
 
-    self:registerOption("main", "Fast Forward", function () return self:appendBool("Speed up the engine.", FAST_FORWARD) end,
-                                                function () self:enterMenu("fast_forward", 1)
+    self:registerOption("main", "Fast Forward", function() return self:appendBool("Speed up the engine.", FAST_FORWARD) end,
+                                                function() self:enterMenu("fast_forward", 1)
     end)
     
     self:registerOption("main", "Debug Rendering",
-                        function () return self:appendBool("Draw debug information.", DEBUG_RENDER) end,
-                        function () DEBUG_RENDER = not DEBUG_RENDER end)
+                        function() return self:appendBool("Draw debug information.", DEBUG_RENDER) end,
+                        function() DEBUG_RENDER = not DEBUG_RENDER end)
     self:registerOption("main", "Hotswap", "Swap out code from the files. Might be unstable.",
-                        function ()
+                        function()
                             Hotswapper.scan(); self:refresh()
                         end)
-    self:registerOption("main", "Reload", "Reload the mod. Hold shift to\nnot temporarily save.", function ()
+    self:registerOption("main", "Reload", "Reload the mod. Hold shift to\nnot temporarily save.", function()
         if Kristal.getModOption("hardReset") then
             love.event.quit("restart")
         else
@@ -765,59 +778,63 @@ function DebugSystem:registerDefaults()
     end)
 
     self:registerOption("main", "Noclip",
-                        function () return self:appendBool("Toggle interaction with solids.", NOCLIP) end,
-                        function () NOCLIP = not NOCLIP end,
+                        function() return self:appendBool("Toggle interaction with solids.", NOCLIP) end,
+                        function() NOCLIP = not NOCLIP end,
                         in_game
     )
 
-    self:registerOption("main", "Give Item", "Give an item.", function ()
+    self:registerOption("main", "Give Item", "Give an item.", function()
                             self:enterMenu("give_item", 0)
                         end, in_game)
 
-    self:registerOption("main", "Portrait Viewer", "Enter the portrait viewer menu.", function ()
+    self:registerOption("main", "Portrait Viewer", "Enter the portrait viewer menu.", function()
                             self:setState("FACES")
                         end, in_game)
 
-    self:registerOption("main", "Flag Editor", "Enter the flag editor menu.", function ()
+    self:registerOption("main", "Flag Editor", "Enter the flag editor menu.", function()
                             self:setState("FLAGS")
                         end, in_game)
 
-    self:registerOption("main", "Sound Test", "Enter the sound test menu.", function ()
+    self:registerOption("main", "Sound Test", "Enter the sound test menu.", function()
                             self:fadeMusicOut()
                             self:enterMenu("sound_test", 0)
                         end, in_game)
 
-    self:registerOption("main", "Change Party", "Enter the party change menu.", function ()
+    self:registerOption("main", "Change Party", "Enter the party change menu.", function()
                             self:enterMenu("change_party", 0)
                         end, in_game)
+    
+    self:registerOption("main", "Border Test", "Enter the border test menu.", function() 
+                            self:enterMenu("border_menu", 0)
+                        end, function() return in_game() and Kristal.Config["borders"] == "dynamic" end)
 
     -- World specific
-    self:registerOption("main", "Select Map", "Switch to a new map.", function ()
+    self:registerOption("main", "Select Map", "Switch to a new map.", function()
                             self:enterMenu("select_map", 0)
                         end, in_overworld)
 
-    self:registerOption("main", "Start Encounter", "Start an encounter.", function ()
+    self:registerOption("main", "Start Encounter", "Start an encounter.", function()
                             self:enterMenu("encounter_select", 0)
                         end, in_overworld)
 
-    self:registerOption("main", "Enter Shop", "Enter a shop.", function ()
+    self:registerOption("main", "Enter Shop", "Enter a shop.", function()
                             self:enterMenu("select_shop", 0)
                         end, in_overworld)
 
-    self:registerOption("main", "Play Cutscene", "Play a cutscene.", function ()
+    self:registerOption("main", "Play Cutscene", "Play a cutscene.", function()
                             self:enterMenu("cutscene_select", 0)
                         end, in_overworld)
 
-    self:registerOption("main", "Play Legend", "Play a legend cutscene.", function ()
+    self:registerOption("main", "Play Legend", "Play a legend cutscene.", function()
                             self:enterMenu("legend_select", 0)
                         end, function() return in_overworld() or in_legend() end)
 
     -- Battle specific
-    self:registerOption("main", "Start Wave", "Start a wave.", function ()
+    self:registerOption("main", "Start Wave", "Start a wave.", function()
                             self:enterMenu("wave_select", 0)
                         end, in_battle)
 
-    self:registerOption("main", "End Battle", "Instantly complete a battle.", function ()
+    self:registerOption("main", "End Battle", "Instantly complete a battle.", function()
                             Game.battle:setState("VICTORY")
                             self:closeMenu()
                         end, in_battle)

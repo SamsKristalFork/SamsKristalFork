@@ -89,13 +89,13 @@ function character:init()
     -- Character color (for action box outline and hp bar)
     self.color = {0, 1, 0}
     -- Damage color (for the number when attacking enemies) (defaults to the main color)
-    self.dmg_color = {0.5, 1, 0.5}
+    self.enemy_damage_color = {0.5, 1, 0.5}
     -- Attack bar color (for the target bar used in attack mode) (defaults to the main color)
-    self.attack_bar_color = {181/255, 230/255, 29/255}
+    self.attack_target_color = {181/255, 230/255, 29/255}
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = {0, 0.5, 0}
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.xact_color = {0.5, 1, 0.5}
+    self.x_act_color = {0.5, 1, 0.5}
 
     -- Head icon in the equip / power menu
     if ralsei_style == 1 then
@@ -121,6 +121,9 @@ function character:init()
     self.head_icon_offset = nil
     -- Menu icon position offset (optional)
     self.menu_icon_offset = nil
+
+    -- Whether this character levels up even if they're not in the party
+    self.always_level_up = true
 
     -- Message shown on gameover (optional)
     self.gameover_message = {

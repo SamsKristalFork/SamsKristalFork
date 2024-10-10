@@ -46,13 +46,13 @@ function Dummy:init()
     self.low_health_text = "* The dummy looks like it's\nabout to fall over."
 
     -- Register act called "Smile"
-    self:registerAct("Smile")
+    self:registerACT("Smile")
     -- Register party act with Ralsei called "Tell Story"
     -- (second argument is description, usually empty)
-    self:registerAct("Tell Story", "", {"ralsei"})
+    self:registerACT("Tell Story", "", {"ralsei"})
 end
 
-function Dummy:onAct(battler, name)
+function Dummy:onACT(battler, name)
     if name == "Smile" then
         -- Give the enemy 100% mercy
         self:addMercy(100)
@@ -88,9 +88,9 @@ function Dummy:onAct(battler, name)
         end
     end
 
-    -- If the act is none of the above, run the base onAct function
+    -- If the act is none of the above, run the base onACT function
     -- (this handles the Check act)
-    return super.onAct(self, battler, name)
+    return super.onACT(self, battler, name)
 end
 
 return Dummy

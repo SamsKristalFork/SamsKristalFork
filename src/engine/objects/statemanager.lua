@@ -46,7 +46,7 @@ function StateManager:addState(state, events)
         events = events.registered_events
     end
 
-    for event,func in pairs(events or {}) do
+    for event, func in pairs(events or {}) do
         local event_name = event:lower()
         self.state_events[event_name] = self.state_events[event_name] or {}
         self.state_events[event_name][state] = func

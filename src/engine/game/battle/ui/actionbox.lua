@@ -4,44 +4,87 @@ local ActionBox, super = Class(Object)
 
 function ActionBox:init(x, y, index, battler)
     super.init(self, x, y)
-    
-    self.selection_siner = 0
+
+    if Game.battle then
+        self.battle = Game.battle
+        self.battle_ui = self.battle.ui
+    end
 
     self.index = index
     self.battler = battler
 
     self.selected_button = 1
 
-    self.revert_to = 40
+    self.button_spacing = 35
 
-    self.data_offset = 0
-
-    self.box = ActionBoxDisplay(self)
-    self.box.layer = 1
-    self:addChild(self.box)
-
-    self.head_offset_x, self.head_offset_y = battler.chara:getHeadIconOffset()
-
-    self.head_sprite = Sprite(battler.chara:getHeadIcons().."/"..battler:getHeadIcon(), 13 + self.head_offset_x, 11 + self.head_offset_y)
-    if not self.head_sprite:getTexture() then
-        self.head_sprite:setSprite(battler.chara:getHeadIcons().."/head")
-    end
-    self.force_head_sprite = false
-
-    if battler.chara:getNameSprite() then
-        self.name_sprite = Sprite(battler.chara:getNameSprite(), 51, 14)
-        self.box:addChild(self.name_sprite)
-    end
-
-    self.hp_sprite = Sprite("ui/hp", 109, 22)
-
-    self.box:addChild(self.head_sprite)
-    self.box:addChild(self.hp_sprite)
-
+    self:createDisplay()
     self:createButtons()
+
+    self.name_font = Assets.getFont("name")
+
+    self.selection_siner = 0
 end
 
-function ActionBox:getButtons(battler)
+function ActionBox:createDisplay()
+    self.display = ActionBoxDisplay(self)
+    self.display.layer = 1
+    self:addChild(self.display)
+    self.display_offset = 0
+
+    self:createHeadSprite()
+    self:createNameSprite()
+    self:createHPSprite()
+end
+
+function ActionBox:createHeadSprite()
+    self.head_offset_x, self.head_offset_y = self.battler.chara:getHeadIconOffset()
+
+    self.head_sprite = Sprite(self.battler.chara:getHeadIcons().."/"..self.battler:getHeadIcon(), 13 + self.head_offset_x, 11 + self.head_offset_y)
+    if not self.head_sprite:getTexture() then
+        self.head_sprite:setSprite(self.battler.chara:getHeadIcons().."/head")
+    end
+
+    self.force_head_sprite = false
+
+    self.display:addChild(self.head_sprite)
+end
+
+function ActionBox:createNameSprite()
+    if self.battler.chara:getNameSprite() then
+        self.name_sprite = Sprite(self.battler.chara:getNameSprite(), 51, 14)
+        self.display:addChild(self.name_sprite)
+    end
+end
+
+function ActionBox:createHPSprite()
+    self.hp_sprite = Sprite("ui/hp", 109, 22)
+    self.display:addChild(self.hp_sprite)
+end
+
+function ActionBox:getButtons()
+    local button_types = {"fight", "act", "magic", "item", "spare", "defend"}
+
+    if not self.battler.chara:hasAct() then Utils.removeFromTable(button_types, "act") end
+    if not self.battler.chara:hasSpells() then Utils.removeFromTable(button_types, "magic") end
+
+--[[     for lib_id,_ in Kristal.iterLibraries() do
+        btn_types = Kristal.libCall(lib_id, "getActionButtons", self.battler, btn_types) or btn_types
+    end
+    btn_types = Kristal.modCall("getActionButtons", self.battler, btn_types) or btn_types ]]
+
+    return button_types
+end
+
+function ActionBox:getButtonOrigin(button_count)
+    local origin = (213 / 2) - ((button_count - 1) * 35 / 2) - 1
+    if (button_count <= 5) and Game:getConfig("oldUIPositions") then
+        origin = origin - 5.5
+    end
+    return origin
+end
+
+function ActionBox:getButtonSpacing()
+    return self.button_spacing
 end
 
 function ActionBox:createButtons()
@@ -51,34 +94,22 @@ function ActionBox:createButtons()
 
     self.buttons = {}
 
-    local btn_types = {"fight", "act", "magic", "item", "spare", "defend"}
+    local button_types = self:getButtons()
 
-    if not self.battler.chara:hasAct() then Utils.removeFromTable(btn_types, "act") end
-    if not self.battler.chara:hasSpells() then Utils.removeFromTable(btn_types, "magic") end
+    local start_x = self:getButtonOrigin(#button_types)
 
-    for lib_id,_ in Kristal.iterLibraries() do
-        btn_types = Kristal.libCall(lib_id, "getActionButtons", self.battler, btn_types) or btn_types
-    end
-    btn_types = Kristal.modCall("getActionButtons", self.battler, btn_types) or btn_types
-
-    local start_x = (213 / 2) - ((#btn_types-1) * 35 / 2) - 1
-
-    if (#btn_types <= 5) and Game:getConfig("oldUIPositions") then
-        start_x = start_x - 5.5
-    end
-
-    for i,btn in ipairs(btn_types) do
-        if type(btn) == "string" then
-            local button = ActionButton(btn, self.battler, math.floor(start_x + ((i - 1) * 35)) + 0.5, 21)
+    for i, button_type in ipairs(button_types) do
+        if type(button_type) == "string" then
+            local button = ActionButton(button_type, self.battler, math.floor(start_x + ((i - 1) * self:getButtonSpacing())) + 0.5, 21)
             button.actbox = self
             table.insert(self.buttons, button)
             self:addChild(button)
-        elseif type(btn) ~= "boolean" then -- nothing if a boolean value, used to create an empty space
-            btn:setPosition(math.floor(start_x + ((i - 1) * 35)) + 0.5, 21)
-            btn.battler = self.battler
-            btn.actbox = self
-            table.insert(self.buttons, btn)
-            self:addChild(btn)
+        elseif type(button_type) ~= "boolean" then -- nothing if a boolean value, used to create an empty space
+            button_type:setPosition(math.floor(start_x + ((i - 1) * self:getButtonSpacing())) + 0.5, 21)
+            button_type.battler = self.battler
+            button_type.actbox = self
+            table.insert(self.buttons, button_type)
+            self:addChild(button_type)
         end
     end
 
@@ -107,28 +138,54 @@ function ActionBox:resetHeadIcon()
     end
 end
 
+function ActionBox:reset()
+    self.selected_button = 1
+    self:resetHeadIcon()
+end
+
 function ActionBox:update()
-    self.selection_siner = self.selection_siner + 2 * DTMULT
+    self.selection_siner = self.selection_siner + (2 * DTMULT)
 
-    if Game.battle.current_selecting == self.index then
-        if self.box.y > -32 then self.box.y = self.box.y - 2 * DTMULT end
-        if self.box.y > -24 then self.box.y = self.box.y - 4 * DTMULT end
-        if self.box.y > -16 then self.box.y = self.box.y - 6 * DTMULT end
-        if self.box.y > -8  then self.box.y = self.box.y - 8 * DTMULT end
-        -- originally '= -64' but that was an oversight by toby
-        if self.box.y < -32 then self.box.y = -32 end
-    elseif self.box.y < -14 then
-        self.box.y = self.box.y + 15 * DTMULT
+    self:updateDisplayPosition()
+    self:updateHeadSpritePosition()
+    self:updateNameSpritePosition()
+    self:updateHPSpritePosition()
+    self:updateHeadSprite()
+    self:updateButtons()
+
+    super.update(self)
+end
+
+function ActionBox:updateDisplayPosition()
+    if self.battle.current_selecting_index == self.index then
+        -- "what's an easing function?" -toby
+        if self.display.y > -32 then self.display.y = self.display.y - 2 * DTMULT end
+        if self.display.y > -24 then self.display.y = self.display.y - 4 * DTMULT end
+        if self.display.y > -16 then self.display.y = self.display.y - 6 * DTMULT end
+        if self.display.y > -8  then self.display.y = self.display.y - 8 * DTMULT end
+        if self.display.y < -32 then self.display.y = -32 end
+    elseif self.display.y < -14 then
+        self.display.y = self.display.y + 15 * DTMULT
     else
-        self.box.y = 0
+        self.display.y = 0
     end
+end
 
-    self.head_sprite.y = 11 - self.data_offset + self.head_offset_y
+function ActionBox:updateHeadSpritePosition()
+    self.head_sprite.y = 11 - self.display_offset + self.head_offset_y
+end
+
+function ActionBox:updateNameSpritePosition()
     if self.name_sprite then
-        self.name_sprite.y = 14 - self.data_offset
+        self.name_sprite.y = 14 - self.display_offset
     end
-    self.hp_sprite.y = 22 - self.data_offset
+end
 
+function ActionBox:updateHPSpritePosition()
+    self.hp_sprite.y = 22 - self.display_offset
+end
+
+function ActionBox:updateHeadSprite()
     if not self.force_head_sprite then
         local current_head = self.battler.chara:getHeadIcons().."/"..self.battler:getHeadIcon()
         if not self.head_sprite:hasSprite(current_head) then
@@ -139,9 +196,11 @@ function ActionBox:update()
             self.head_sprite:setSprite(current_head)
         end
     end
+end
 
-    for i,button in ipairs(self.buttons) do
-        if (Game.battle.current_selecting == self.index) then
+function ActionBox:updateButtons()
+    for i, button in ipairs(self.buttons) do
+        if (self.battle.current_selecting_index == self.index) then
             button.selectable = true
             button.hovered = (self.selected_button == i)
         else
@@ -149,28 +208,52 @@ function ActionBox:update()
             button.hovered = false
         end
     end
-
-    super.update(self)
-end
-
-function ActionBox:select()
-    self.buttons[self.selected_button]:select()
-end
-
-function ActionBox:unselect()
-    self.buttons[self.selected_button]:unselect()
 end
 
 function ActionBox:draw()
     self:drawSelectionMatrix()
-    self:drawActionBox()
+    self:drawBorders()
 
     super.draw(self)
 
+    self:drawNameText()
+end
+
+function ActionBox:drawBorders()
+    if self.battle.current_selecting_index == self.index then
+        Draw.setColor(self.battler.chara:getColor())
+        Draw.setLineWidth(2)
+        Draw.line(1  , 2, 1,   37)
+        Draw.line(Game:getConfig("oldUIPositions") and 211 or 212, 2, Game:getConfig("oldUIPositions") and 211 or 212, 37)
+        Draw.line(0  , 6, 212, 6 )
+    end
+end
+
+function ActionBox:drawSelectionMatrix()
+    -- Draw the background of the selection matrix
+    Draw.setColor(0, 0, 0, 1)
+    Draw.rectangle("fill", 2, 2, 209, 35)
+
+    if self.battle.current_selecting_index == self.index then
+        local r,g,b,a = self.battler.chara:getColor()
+
+        for i = 0, 11 do
+            local siner = self.selection_siner + (i * (10 * math.pi))
+
+            Draw.setLineWidth(2)
+            Draw.setColor(r, g, b, a * math.sin(siner / 60))
+            if math.cos(siner / 60) < 0 then
+                Draw.line(1 - (math.sin(siner / 60) * 30) + 30, 0, 1 - (math.sin(siner / 60) * 30) + 30, 37)
+                Draw.line(211 + (math.sin(siner / 60) * 30) - 30, 0, 211 + (math.sin(siner / 60) * 30) - 30, 37)
+            end
+        end
+    end
+end
+
+function ActionBox:drawNameText()
     if not self.name_sprite then
-        local font = Assets.getFont("name")
-        love.graphics.setFont(font)
-        Draw.setColor(1, 1, 1, 1)
+        Draw.setFont(self.name_font)
+        Draw.resetColor()
 
         local name = self.battler.chara:getName():upper()
         local spacing = 5 - name:len()
@@ -178,44 +261,29 @@ function ActionBox:draw()
         local off = 0
         for i = 1, name:len() do
             local letter = name:sub(i, i)
-            love.graphics.print(letter, self.box.x + 51 + off, self.box.y + 14 - self.data_offset - 1)
-            off = off + font:getWidth(letter) + spacing
+            Draw.print(letter, self.box.x + 51 + off, self.box.y + 14 - self.display_offset - 1)
+            off = off + self.name_font:getWidth(letter) + spacing
         end
     end
 end
 
-function ActionBox:drawActionBox()
-    if Game.battle.current_selecting == self.index then
-        Draw.setColor(self.battler.chara:getColor())
-        love.graphics.setLineWidth(2)
-        love.graphics.line(1  , 2, 1,   37)
-        love.graphics.line(Game:getConfig("oldUIPositions") and 211 or 212, 2, Game:getConfig("oldUIPositions") and 211 or 212, 37)
-        love.graphics.line(0  , 6, 212, 6 )
-    end
-    Draw.setColor(1, 1, 1, 1)
+function ActionBox:selectButton()
+    self.buttons[self.selected_button]:select()
+    self.battle:stopAndPlaySound("ui_select")
 end
 
-function ActionBox:drawSelectionMatrix()
-    -- Draw the background of the selection matrix
-    Draw.setColor(0, 0, 0, 1)
-    love.graphics.rectangle("fill", 2, 2, 209, 35)
+function ActionBox:unselectButton()
+    self.buttons[self.selected_button]:unselect()
+end
 
-    if Game.battle.current_selecting == self.index then
-        local r,g,b,a = self.battler.chara:getColor()
+function ActionBox:nextButton()
+    self.selected_button = Utils.clampWrap(self.selected_button + 1, 1, #self.buttons)
+    self.battle:stopAndPlaySound("ui_move")
+end
 
-        for i = 0, 11 do
-            local siner = self.selection_siner + (i * (10 * math.pi))
-
-            love.graphics.setLineWidth(2)
-            Draw.setColor(r, g, b, a * math.sin(siner / 60))
-            if math.cos(siner / 60) < 0 then
-                love.graphics.line(1 - (math.sin(siner / 60) * 30) + 30, 0, 1 - (math.sin(siner / 60) * 30) + 30, 37)
-                love.graphics.line(211 + (math.sin(siner / 60) * 30) - 30, 0, 211 + (math.sin(siner / 60) * 30) - 30, 37)
-            end
-        end
-
-        Draw.setColor(1, 1, 1, 1)
-    end
+function ActionBox:previousButton()
+    self.selected_button = Utils.clampWrap(self.selected_button - 1, 1, #self.buttons)
+    self.battle:stopAndPlaySound("ui_move")
 end
 
 return ActionBox

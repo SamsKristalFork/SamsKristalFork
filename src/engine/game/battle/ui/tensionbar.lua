@@ -2,25 +2,14 @@
 ---@overload fun(...) : TensionBar
 local TensionBar, super = Class(Object)
 
---[[
-    Some quick notes about the tension bar:
-
-    "apparent" and "current" are still off of 250.
-    This is because of how Deltarune draws the tensionbar,
-    theres no way I would be able to keep accuracy if I didn't do it.
-
-    Max tension is now 100 by default.
-    Setting it to 1000 will make Heal Prayer cost 3.2% TP (displayed as 3% in the menu.)
-    Setting it to 1 will make Heal Prayer cost 3200% TP.
-
-    Tension is no longer stored in the tensionbar, it is now stored in Game.
-]]
-
 function TensionBar:init(x, y, dont_animate)
     if Game.world and (not x) then
         local x2 = Game.world.camera:getRect()
         x = x2 - 25
     end
+
+    -- rename like all of these variables
+    -- make all the 196s based on the height of the tensionbar
 
     super.init(self, x or -25, y or 40)
 
@@ -39,24 +28,16 @@ function TensionBar:init(x, y, dont_animate)
 
     self.apparent = 0
     self.current = 0
-
-    self.change = 0
-    self.changetimer = 15
     self.font = Assets.getFont("main")
     self.tp_text = Assets.getTexture("ui/battle/tp_text")
 
     self.parallax_y = 0
 
-    -- still dont understand nil logic
-    if dont_animate then
-        self.animating_in = false
-    else
-        self.animating_in = true
-    end
+    self.animating_in = (not dont_animate) or false
 
     self.animation_timer = 0
 
-    self.tsiner = 0
+    self.preview_timer = 0
 
     self.tension_preview = 0
     self.shown = false
@@ -97,15 +78,19 @@ function TensionBar:setTensionPreview(amount)
     self.tension_preview = amount
 end
 
-function TensionBar:getPercentageFor(variable)
-    return variable / Game:getMaxTension()
+function TensionBar:getPercentageFor(amount)
+    return amount / Game:getMaxTension()
 end
 
-function TensionBar:getPercentageFor250(variable)
-    return variable / 250
+function TensionBar:getPercentageFor250(amount)
+    return amount / 250
 end
 
-function TensionBar:processSlideIn()
+function TensionBar:getMultipliedPercentageFor250(amount)
+    return (amount / 250) * Game:getMaxTension()
+end
+
+function TensionBar:updateSlideIn()
     if self.animating_in then
         self.animation_timer = self.animation_timer + DTMULT
         if self.animation_timer > 12 then
@@ -117,61 +102,68 @@ function TensionBar:processSlideIn()
     end
 end
 
-function TensionBar:processTension()
+function TensionBar:updateAmount()
     if (math.abs((self.apparent - self:getTension250())) < 20) then
         self.apparent = self:getTension250()
     elseif (self.apparent < self:getTension250()) then
-        self.apparent = self.apparent + (20 * DTMULT)
+        self.apparent = self.apparent + (self:getMultipliedPercentageFor250(20) * DTMULT)
     elseif (self.apparent > self:getTension250()) then
-        self.apparent = self.apparent - (20 * DTMULT)
+        self.apparent = self.apparent - (self:getMultipliedPercentageFor250(20) * DTMULT)
     end
     if (self.apparent ~= self.current) then
-        self.changetimer = self.changetimer + (1 * DTMULT)
-        if (self.changetimer > 15) then
-            if ((self.apparent - self.current) > 0) then
-                self.current = self.current + (2 * DTMULT)
-            end
-            if ((self.apparent - self.current) > 10) then
-                self.current = self.current + (2 * DTMULT)
-            end
-            if ((self.apparent - self.current) > 25) then
-                self.current = self.current + (3 * DTMULT)
-            end
-            if ((self.apparent - self.current) > 50) then
-                self.current = self.current + (4 * DTMULT)
-            end
-            if ((self.apparent - self.current) > 100) then
-                self.current = self.current + (5 * DTMULT)
-            end
-            if ((self.apparent - self.current) < 0) then
-                self.current = self.current - (2 * DTMULT)
-            end
-            if ((self.apparent - self.current) < -10) then
-                self.current = self.current - (2 * DTMULT)
-            end
-            if ((self.apparent - self.current) < -25) then
-                self.current = self.current - (3 * DTMULT)
-            end
-            if ((self.apparent - self.current) < -50) then
-                self.current = self.current - (4 * DTMULT)
-            end
-            if ((self.apparent - self.current) < -100) then
-                self.current = self.current - (5 * DTMULT)
-            end
-            if (math.abs((self.apparent - self.current)) < 3) then
-                self.current = self.apparent
-            end
+        local difference = (self.apparent - self.current)
+
+        if difference > 0 then
+            self.current = self.current + (self:getMultipliedPercentageFor250(2) * DTMULT)
+        end
+        if difference > self:getMultipliedPercentageFor250(10) then
+            self.current = self.current + (self:getMultipliedPercentageFor250(2) * DTMULT)
+        end
+        if difference > self:getMultipliedPercentageFor250(25) then
+            self.current = self.current + (self:getMultipliedPercentageFor250(3) * DTMULT)
+        end
+        if difference > self:getMultipliedPercentageFor250(50) then
+            self.current = self.current + (self:getMultipliedPercentageFor250(4) * DTMULT)
+        end
+        if difference > self:getMultipliedPercentageFor250(100) then
+            self.current = self.current + (self:getMultipliedPercentageFor250(5) * DTMULT)
+        end
+        if difference < 0 then
+            self.current = self.current - (self:getMultipliedPercentageFor250(2) * DTMULT)
+        end
+        if difference < self:getMultipliedPercentageFor250(-10) then
+            self.current = self.current - (self:getMultipliedPercentageFor250(2) * DTMULT)
+        end
+        if difference < self:getMultipliedPercentageFor250(-25) then
+            self.current = self.current - (self:getMultipliedPercentageFor250(3) * DTMULT)
+        end
+        if difference < self:getMultipliedPercentageFor250(-50) then
+            self.current = self.current - (self:getMultipliedPercentageFor250(4) * DTMULT)
+        end
+        if difference < self:getMultipliedPercentageFor250(-100) then
+            self.current = self.current - (self:getMultipliedPercentageFor250(5) * DTMULT)
+        end
+        if (math.abs(difference) < 3) then
+            self.current = self.apparent
         end
     end
 
     if (self.tension_preview > 0) then
-        self.tsiner = self.tsiner + DTMULT
+        self.preview_timer = self.preview_timer + DTMULT
     end
 end
 
+function TensionBar:getCurrentValue()
+    return math.floor(self:getMultipliedPercentageFor250(self.apparent))
+end
+
+function TensionBar:isMax()
+    return self:getCurrentValue() > 100
+end
+
 function TensionBar:update()
-    self:processSlideIn()
-    self:processTension()
+    self:updateSlideIn()
+    self:updateAmount()
 
     super.update(self)
 end
@@ -180,16 +172,12 @@ function TensionBar:drawText()
     Draw.setColor(1, 1, 1, 1)
     Draw.draw(self.tp_text, -30, 30)
 
-    local tamt = math.floor(self:getPercentageFor250(self.apparent) * 100)
-    self.maxed = false
-    love.graphics.setFont(self.font)
-    if (tamt < 100) then
-        love.graphics.print(tostring(math.floor(self:getPercentageFor250(self.apparent) * 100)), -30, 70)
-        love.graphics.print("%", -25, 95)
-    end
-    if (tamt >= 100) then
-        self.maxed = true
-
+    Draw.setFont(self.font)
+    if not self:isMax() then
+        --split
+        Draw.print(tostring(math.floor(self:getMultipliedPercentageFor250(self.apparent))), -30, 70)
+        Draw.print("%", -25, 95)
+    else
         self:drawMaxText()
     end
 end
@@ -197,15 +185,15 @@ end
 function TensionBar:drawMaxText()
     Draw.setColor(PALETTE["tension_maxtext"])
 
-    love.graphics.print("M", -28, 70)
-    love.graphics.print("A", -24, 90)
-    love.graphics.print("X", -20, 110)
+    Draw.print("M", -28, 70)
+    Draw.print("A", -24, 90)
+    Draw.print("X", -20, 110)
 end
 
 function TensionBar:drawBack()
     Draw.setColor(PALETTE["tension_back"])
     Draw.pushScissor()
-    Draw.scissorPoints(0, 0, 25, 196 - (self:getPercentageFor250(self.current) * 196) + 1)
+    Draw.scissorPoints(0, 0, 25, self.height - (self:getPercentageFor250(self.current) * self.height) + 1)
     Draw.draw(self.tp_bar_fill, 0, 0)
     Draw.popScissor()
 end
@@ -214,50 +202,50 @@ function TensionBar:drawFill()
     if (self.apparent < self.current) then
         Draw.setColor(PALETTE["tension_decrease"])
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.current) * 196) + 1, 25, 196)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.current) * self.height) + 1, 25, self.height)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
 
         Draw.setColor(PALETTE["tension_fill"])
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.apparent) * 196) + 1 + (self:getPercentageFor(self.tension_preview) * 196), 25, 196)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.apparent) * self.height) + 1 + (self:getPercentageFor(self.tension_preview) * self.height), 25, self.height)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
     elseif (self.apparent > self.current) then
         Draw.setColor(1, 1, 1, 1)
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.apparent) * 196) + 1, 25, 196)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.apparent) * self.height) + 1, 25, self.height)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
 
         Draw.setColor(PALETTE["tension_fill"])
-        if (self.maxed) then
+        if self:isMax() then
             Draw.setColor(PALETTE["tension_max"])
         end
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.current) * 196) + 1 + (self:getPercentageFor(self.tension_preview) * 196), 25, 196)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.current) * self.height) + 1 + (self:getPercentageFor(self.tension_preview) * self.height), 25, self.height)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
     elseif (self.apparent == self.current) then
         Draw.setColor(PALETTE["tension_fill"])
-        if (self.maxed) then
+        if self:isMax() then
             Draw.setColor(PALETTE["tension_max"])
         end
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.current) * 196) + 1 + (self:getPercentageFor(self.tension_preview) * 196), 25, 196)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.current) * self.height) + 1 + (self:getPercentageFor(self.tension_preview) * self.height), 25, self.height)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
     end
 
     if (self.tension_preview > 0) then
-        local alpha = (math.abs((math.sin((self.tsiner / 8)) * 0.5)) + 0.2)
+        local alpha = (math.abs((math.sin((self.preview_timer/ 8)) * 0.5)) + 0.2)
         local color_to_set = {1, 1, 1, alpha}
 
-        local theight = 196 - (self:getPercentageFor250(self.current) * 196)
-        local theight2 = theight + (self:getPercentageFor(self.tension_preview) * 196)
+        local theight = self.height - (self:getPercentageFor250(self.current) * self.height)
+        local theight2 = theight + (self:getPercentageFor(self.tension_preview) * self.height)
         -- Note: causes a visual bug.
-        if (theight2 > ((0 + 196) - 1)) then
-            theight2 = ((0 + 196) - 1)
+        if (theight2 > ((0 + self.height) - 1)) then
+            theight2 = ((0 + self.height) - 1)
             color_to_set = {COLORS.dkgray[1], COLORS.dkgray[2], COLORS.dkgray[3], 0.7}
         end
 
@@ -276,11 +264,10 @@ function TensionBar:drawFill()
         Draw.setColor(1, 1, 1, 1)
     end
 
-
     if ((self.apparent > 20) and (self.apparent < 250)) then
         Draw.setColor(1, 1, 1, 1)
         Draw.pushScissor()
-        Draw.scissorPoints(0, 196 - (self:getPercentageFor250(self.current) * 196) + 1, 25, 196 - (self:getPercentageFor250(self.current) * 196) + 3)
+        Draw.scissorPoints(0, self.height - (self:getPercentageFor250(self.current) * self.height) + 1, 25, self.height - (self:getPercentageFor250(self.current) * self.height) + 3)
         Draw.draw(self.tp_bar_fill, 0, 0)
         Draw.popScissor()
     end

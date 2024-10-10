@@ -4,7 +4,7 @@ function Dummy:init()
     super.init(self)
 
     -- Text displayed at the bottom of the screen at the start of the encounter
-    self.text = "* The tutorial begins...?"
+    self.first_text = "* The tutorial begins...?"
 
     -- Battle music ("battle" is rude buster)
     self.music = "battle"

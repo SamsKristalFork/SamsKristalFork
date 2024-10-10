@@ -15,13 +15,20 @@ function item:init()
     self.description = "A small ball of accumulated things in your pocket."
 
     -- Light world check text
-    self.check = Game.chapter == 1 and "A small ball\nof accumulated things." or "A small ball\nof accumulated things in your\npocket."
+    self.check = "A small ball\nof accumulated things in your\npocket."
 
     -- Where this item can be used (world, battle, all, or none)
     self.usable_in = "all"
     -- Item this item will get turned into when consumed
     self.result_item = nil
+end
 
+function item:getCheck()
+    if Game.chapter == 1 then
+        return "A small ball\nof accumulated things."
+    else
+        return self.check
+    end
 end
 
 function item:onWorldUse()
@@ -68,7 +75,7 @@ function item:onToss()
     return false
 end
 
-function Item:onCheck()
+function item:onCheck()
     Game.world:startCutscene(function(cutscene)
         cutscene:text("* \""..self:getName().."\" - "..self:getCheck())
 

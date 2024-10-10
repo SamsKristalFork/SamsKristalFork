@@ -33,9 +33,9 @@ function PartyMember:init()
     self.has_spells = false
 
     -- Whether the party member can use their X-Action
-    self.has_xact = true
+    self.has_x_act = true
     -- X-Action name (displayed in this character's spell menu)
-    self.xact_name = "?-Action"
+    self.x_act_name = "?-Action"
 
     -- Spells
     self.spells = {}
@@ -78,13 +78,13 @@ function PartyMember:init()
     -- Character color (for action box outline and hp bar)
     self.color = {1, 1, 1}
     -- Damage color (for the number when attacking enemies) (defaults to the main color)
-    self.dmg_color = nil
-    -- Attack bar color (for the target bar used in attack mode) (defaults to the main color)
-    self.attack_bar_color = nil
+    self.enemy_damage_color = nil
+    -- Attack target color (for the target bar used while attacking) (defaults to the main color)
+    self.attack_target_color = nil
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = nil
-    -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.xact_color = nil
+    -- X-Action color (for the color of X-Action while attacking) (defaults to the main color)
+    self.x_act_color = nil
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/kris/head"
@@ -116,6 +116,9 @@ function PartyMember:init()
     -- Temporary stat buffs in battles
     self.stat_buffs = {}
 
+    -- Whether this character levels up even if they're not in the party
+    self.always_level_up = true
+
     -- Light world EXP requirements
     self.lw_exp_needed = {
         [ 1] = 0,
@@ -143,30 +146,36 @@ end
 
 -- Callbacks
 
-function PartyMember:onAttackHit(enemy, damage) end
-
-function PartyMember:onTurnStart(battler) end
-function PartyMember:onActionSelect(battler, undo) end
-
-function PartyMember:onLevelUp(level) end
-
 function PartyMember:onPowerSelect(menu) end
 function PartyMember:onPowerDeselect(menu) end
 
 function PartyMember:drawPowerStat(index, x, y, menu) end
 
-function PartyMember:onSave(data) end
-function PartyMember:onLoad(data) end
-
 function PartyMember:onEquip(item, item2) return true end
 function PartyMember:onUnequip(item, item2) return true end
 
-function PartyMember:onActionBox(box, overworld) end
+function PartyMember:onCreateWorldActionBox(box) end
+function PartyMember:onCreateBattleActionBox(box) end
+
+function PartyMember:onTurnStart(battler) end
+function PartyMember:onTurn(battler, undo) end
+
+function PartyMember:beforeCreateAttackSprite(enemy, points, crit) end
+function PartyMember:onCreateAttackSprite(sprite, enemy, points, crit) end
+
+function PartyMember:onAttackHit(enemy, damage) end
+
+function PartyMember:onLevelUp(level) end
+
+function PartyMember:onSave(data) end
+function PartyMember:onLoad(data) end
+
+-- more actionbox callbacks?
 
 -- Getters
 
 function PartyMember:getName() return self.name end
-function PartyMember:getTitle() return "LV"..self:getLevel().." "..self.title end
+function PartyMember:getTitle() return "LV" .. self:getLevel() .. " " .. self.title end
 function PartyMember:getLevel() return self.level end
 
 function PartyMember:getLightLV() return self.lw_lv end
@@ -178,9 +187,9 @@ function PartyMember:getSoulColor() return Utils.unpackColor(self.soul_color or 
 
 function PartyMember:hasAct() return self.has_act end
 function PartyMember:hasSpells() return self.has_spells end
-function PartyMember:hasXAct() return self.has_xact end
+function PartyMember:hasXAct() return self.has_x_act end
 
-function PartyMember:getXActName() return self.xact_name end
+function PartyMember:getXActName() return self.x_act_name end
 
 function PartyMember:getWeaponIcon() return self.weapon_icon end
 
@@ -205,16 +214,16 @@ function PartyMember:getStatBuff(stat)
 end
 
 function PartyMember:getColor() return Utils.unpackColor(self.color) end
-function PartyMember:getDamageColor()
-    if self.dmg_color then
-        return Utils.unpackColor(self.dmg_color)
+function PartyMember:getEnemyDamageColor()
+    if self.enemy_damage_color then
+        return Utils.unpackColor(self.enemy_damage_color)
     else
         return self:getColor()
     end
 end
-function PartyMember:getAttackBarColor()
-    if self.attack_bar_color then
-        return Utils.unpackColor(self.attack_bar_color)
+function PartyMember:getAttackTargetColor()
+    if self.attack_target_color then
+        return Utils.unpackColor(self.attack_target_color)
     else
         return self:getColor()
     end

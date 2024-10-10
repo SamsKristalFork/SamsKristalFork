@@ -61,7 +61,7 @@ function character:init()
     -- Damage color (for the number when attacking enemies) (defaults to the main color)
     self.dmg_color = nil
     -- Attack bar color (for the target bar used in attack mode) (defaults to the main color)
-    self.attack_bar_color = nil
+    self.attack_target_color = nil
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = nil
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)

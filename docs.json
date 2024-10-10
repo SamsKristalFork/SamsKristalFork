@@ -2431,8 +2431,8 @@
                 "methods": {},
                 "fields": {}
             },
-            "AttackBar": {
-                "name": "AttackBar",
+            "AttackBolt": {
+                "name": "AttackBolt",
                 "description": "",
                 "extends": "Object",
                 "methods": {},

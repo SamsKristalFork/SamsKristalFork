@@ -647,16 +647,14 @@ end
 
 ---@param shop string|Shop
 function Game:setupShop(shop)
+    if not shop then return end
+
     if self.shop then
         error("Attempt to enter shop while already in shop")
     end
 
     if type(shop) == "string" then
         shop = Registry.createShop(shop)
-    end
-
-    if shop == nil then
-        error("Attempt to enter shop with nil shop")
     end
 
     self.shop = shop
@@ -891,9 +889,9 @@ end
 ---@return integer
 ---@return integer
 function Game:getSoulColor()
-    local mr, mg, mb, ma = Kristal.callEvent(KRISTAL_EVENT.getSoulColor)
-    if mr ~= nil then
-        return mr, mg, mb, ma or 1
+    local sr, sg, sb, sa = Kristal.callEvent(KRISTAL_EVENT.getSoulColor)
+    if sr ~= nil then
+        return sr, sg, sb, sa or 1
     end
 
     local chara = Game:getSoulPartyMember()
@@ -907,10 +905,21 @@ function Game:getSoulColor()
 end
 
 ---@return PartyMember
-function Game:getActLeader()
+function Game:getACTLeader()
     for _,party in ipairs(self.party) do
         if party.has_act then
             return party
+        end
+    end
+end
+
+function Game:levelUp(level)
+    level = level or self.level_up_count
+    -- kris, susie, and ralsei level up together, noelle levels up if she's in the party
+
+    for _,member in ipairs(self.party_data) do
+        if member.always_level_up or self:hasPartyMember(member.id) then
+            member:onLevelUp(level)
         end
     end
 end
