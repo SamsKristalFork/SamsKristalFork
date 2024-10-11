@@ -24,7 +24,7 @@ end
 -- Getters
 
 function BattlePartySelect:getTexture(texture)
-    if self.textures[texture] then
+    if texture and self.textures[texture] then
         return self.textures[texture]
     end
 end

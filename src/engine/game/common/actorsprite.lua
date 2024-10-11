@@ -33,9 +33,6 @@ function ActorSprite:init(actor)
     self.aura = false
     self.aura_siner = 0
 
-    self.run_away = false
-    self.run_away_timer = 0
-
     self.frozen = false
     self.freeze_progress = 1
 
@@ -350,10 +347,6 @@ function ActorSprite:update()
         self.aura_siner = self.aura_siner + 0.25 * DTMULT
     end
 
-    if self.run_away then
-        self.run_away_timer = self.run_away_timer + DTMULT
-    end
-
     super.update(self)
 
     self.actor:onSpriteUpdate(self)
@@ -367,16 +360,6 @@ end
 
 function ActorSprite:draw()
     if self.actor:preSpriteDraw(self) then
-        return
-    end
-
-    if self.texture and self.run_away then
-        local r,g,b,a = self:getDrawColor()
-        for i = 0, 80 do
-            local alph = a * 0.4
-            Draw.setColor(r,g,b, ((alph - (self.run_away_timer / 8)) + (i / 200)))
-            Draw.draw(self.texture, i * 2, 0)
-        end
         return
     end
 

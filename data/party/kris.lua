@@ -30,9 +30,9 @@ function character:init()
     self.has_spells = false
 
     -- Whether the party member can use their X-Action
-    self.has_xact = true
+    self.has_x_action = true
     -- X-Action name (displayed in this character's spell menu)
-    self.xact_name = "K-Action"
+    self.x_action_name = "K-Action"
 
     -- Current health (saved to the save file)
     if Game.chapter == 1 then
@@ -91,7 +91,7 @@ function character:init()
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = {0, 0, 1}
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.x_act_color = {0.5, 1, 1}
+    self.x_action_color = {0.5, 1, 1}
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/kris/head"

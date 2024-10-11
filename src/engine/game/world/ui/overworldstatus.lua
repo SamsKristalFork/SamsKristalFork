@@ -1,11 +1,9 @@
----@class HealthBar : Object
----@overload fun(...) : HealthBar
-local HealthBar, super = Class(Object)
+---@class OverworldStatus : Object
+---@overload fun(...) : OverworldStatus
+local OverworldStatus, super = Class(Object)
 
-function HealthBar:init()
+function OverworldStatus:init()
     super.init(self, 0, -80)
-
-    self.layer = 1 -- TODO
 
     self.parallax_x = 0
     self.parallax_y = 0
@@ -47,7 +45,7 @@ function HealthBar:init()
     self.auto_hide_timer = 0
 end
 
-function HealthBar:transitionIn()
+function OverworldStatus:transitionIn()
     if self.animate_out then
         self.animate_out = false
         self.animation_timer = 0
@@ -55,7 +53,7 @@ function HealthBar:transitionIn()
     end
 end
 
-function HealthBar:transitionOut()
+function OverworldStatus:transitionOut()
     if not self.animate_out then
         self.animate_out = true
         self.animation_timer = 0
@@ -63,7 +61,7 @@ function HealthBar:transitionOut()
     end
 end
 
-function HealthBar:update()
+function OverworldStatus:update()
     self.animation_timer = self.animation_timer + DTMULT
     self.auto_hide_timer = self.auto_hide_timer + DTMULT
     if Game.world.menu or Game.world:inBattle() then
@@ -81,7 +79,7 @@ function HealthBar:update()
         self.animation_done = true
         self.animation_timer = max_time + 1
         if self.animate_out then
-            Game.world.healthbar = nil
+            Game.world.status = nil
             self:remove()
             return
         end
@@ -114,7 +112,7 @@ function HealthBar:update()
     super.update(self)
 end
 
-function HealthBar:draw()
+function OverworldStatus:draw()
     -- Draw the black background
     Draw.setColor(PALETTE["world_fill"])
     love.graphics.rectangle("fill", 0, 2, 640, 61)
@@ -122,11 +120,11 @@ function HealthBar:draw()
     super.draw(self)
 end
 
-function HealthBar:react(chara, reaction)
+function OverworldStatus:react(chara, reaction)
     local index = Game:getPartyIndex(chara)
     if index and self.action_boxes[index] then
         self.action_boxes[index]:react(reaction)
     end
 end
 
-return HealthBar
+return OverworldStatus

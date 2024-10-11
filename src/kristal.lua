@@ -487,7 +487,7 @@ function Kristal.onKeyPressed(key, is_repeat)
         elseif key == "f6" then
             DEBUG_RENDER = not DEBUG_RENDER
         elseif key == "f8" then
-            print("Hotswapping files...\nNOTE: Might be unstable. If anything goes wrong, it's not our fault :P")
+            print("Hotswapping files...")
             Hotswapper.scan()
         elseif key == "f9" then
             love.filesystem.createDirectory("screenshots")

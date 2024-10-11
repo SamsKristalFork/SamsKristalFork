@@ -969,8 +969,8 @@ end
 
 ---@param amount number
 function Game:setTensionPreview(amount)
-    if Game.battle and Game.battle.tension_bar then
-        Game.battle.tension_bar:setTensionPreview(amount)
+    if Game.battle then
+        Game.battle:setTensionPreview(amount)
     end
 end
 

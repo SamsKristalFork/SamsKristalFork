@@ -307,16 +307,16 @@ function Encounter:createSoul(x, y, color)
 end
 
 function Encounter:registerXAction(party, name, description, tp, highlight, extra)
-    local x_act = {
+    local x_action = {
         ["name"] = name,
         ["description"] = description,
         ["party"] = party,
-        ["color"] = {Game.battle.party[Game.battle:getPartyIndex(party)].chara:getXActColor()},
+        ["color"] = {Game.battle.party[Game.battle:getPartyIndex(party)].chara:getXActionColor()},
         ["tp"] = tp or 0,
         ["highlight"] = highlight,
         ["short"] = false
     }
-    table.insert(Utils.merge(self.x_actions, extra), x_act)
+    table.insert(Utils.merge(self.x_actions, extra), x_action)
 end
 
 ---@return boolean

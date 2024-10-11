@@ -31,7 +31,7 @@ end
 -- Getters
 
 function BattleEnemySelect:getTexture(texture)
-    if self.textures[texture] then
+    if texture and self.textures[texture] then
         return self.textures[texture]
     end
 end
@@ -98,7 +98,7 @@ function BattleEnemySelect:drawHeaders()
     Draw.setFont(self.font)
     -- put the positions in init
 
-    if not self.battle.state_vars["x-act"] then
+    if not self.battle.state_vars["selected_x_action"] then
         Draw.print("HP", 344, -11, 0, 1, 0.5)
     end
     if self.draw_mercy then
@@ -120,7 +120,7 @@ function BattleEnemySelect:drawEnemy(enemy, x, y)
     self:drawName(enemy, x, y)
     self:drawIcons(enemy, x, y)
     self:drawComment(enemy, x, y)
-    -- drawXACT
+    self:drawXAction(enemy, x, y)
     self:drawGauges(enemy, x, y)
 end
 
@@ -170,23 +170,37 @@ function BattleEnemySelect:drawGradientName(enemy, x, y)
             Draw.rectangle("fill", i - 1, 0, 1, 1)
         end
     Draw.popCanvas()
-
+    
     Draw.resetColor()
 
-    local shader = Kristal.Shaders["DynGradient"]
-    Draw.pushShader(shader, {colors = color_canvas, colorSize = {#name_colors, 1}})
+    Draw.pushShader("DynGradient", {colors = color_canvas, colorSize = {#name_colors, 1}})
         Draw.drawCanvas(canvas, x, y)
     Draw.popShader()
 end
 
 function BattleEnemySelect:drawComment(enemy, x, y)
-    local text_width = self.font:getWidth(enemy.name)
-    Draw.setColor(PALETTE["battle_enemy_comment"])
+    -- i SWEAR this draws with x-acts in dr, could be thinking of deltatraveler though
+    if not self.battle.state_vars["selected_x_action"] then
+        local text_width = self.font:getWidth(enemy.name)
+        Draw.setColor(PALETTE["battle_text_comment"])
+        if (x + ((text_width + 60) + (self.font:getWidth(enemy.comment) / 2))) < 415 then
+            Draw.print(enemy.comment, x + (text_width + 60), y)
+        else
+            Draw.print(enemy.comment, x + (text_width + 60), y, 0, 0.5, 1)
+        end
+    end
+end
 
-    if (x + ((text_width + 60) + (self.font:getWidth(enemy.comment) / 2))) < 415 then
-        Draw.print(enemy.comment, x + (text_width + 60), y)
-    else
-        Draw.print(enemy.comment, x + (text_width + 60), y, 0, 0.5, 1)
+function BattleEnemySelect:drawXAction(enemy, x, y)
+    local x_action = self.battle.state_vars["selected_x_action"]
+    if x_action then
+        local current_battler = self.battle:getCurrentlySelectingBattler()
+        Draw.setColor(current_battler.chara:getXActionColor())
+        if x_action.data.default then
+            Draw.print(enemy:getXAction(current_battler), x + 202, y)
+        else
+            Draw.print(x_action.name, x + 202, y)
+        end
     end
 end
 
@@ -243,7 +257,7 @@ function BattleEnemySelect:drawGauges(enemy, x, y)
 end
 
 function BattleEnemySelect:drawHPGauge(enemy, x, y)
-    --if self.battle.state_reason ~= "XACT" then -- detect this better
+    if not self.battle.state_vars["selected_x_action"] then
         local hp_x = (self.draw_mercy and x + 340 or x + 430)
         local percent = enemy.health / enemy.max_health
 
@@ -259,7 +273,7 @@ function BattleEnemySelect:drawHPGauge(enemy, x, y)
                 Draw.print(math.ceil(percent * 100) .. "%", hp_x + 4, y + 5, 0, 1, 0.5)
             end
         end
-   -- end
+    end
 end
 
 function BattleEnemySelect:drawMercyGauge(enemy, x, y)
@@ -267,9 +281,9 @@ function BattleEnemySelect:drawMercyGauge(enemy, x, y)
         -- split into separate functions for the normal, disabled, and unselectable gauges
         -- option to not change and/or draw the mercy gauge for unselectable enemies
         if enemy.selectable then
-            Draw.setColor(PALETTE["battle_mercy_bg"])
+            Draw.setColor(PALETTE["battle_mercy_gauge_bg"])
         else
-            Draw.setColor(PALETTE["battle_mercy_unselectable_bg"])
+            Draw.setColor(PALETTE["battle_mercy_gauge_unselectable_bg"])
         end
 
         local gauge_x = x + 440
@@ -278,17 +292,17 @@ function BattleEnemySelect:drawMercyGauge(enemy, x, y)
         Draw.rectangle("fill", x + 440, y + 5, 81, 16)
 
         if enemy.disable_mercy then
-            Draw.setColor(PALETTE["battle_mercy_text"])
+            Draw.setColor(PALETTE["battle_mercy_gauge_disabled"])
             Draw.setLineWidth(2)
             Draw.line(gauge_x,  51 + gauge_y,           gauge_x + 81, (51 + gauge_y) + 16 - 1)
-            Draw.line(gauge_x, (51 + gauge_y) + 16 - 1, 520 + 81,      51 + gauge_y)
+            Draw.line(gauge_x, (51 + gauge_y) + 16 - 1, 520     + 81,  51 + gauge_y          )
         else
-            Draw.setColor(PALETTE["battle_mercy_fill"])
+            Draw.setColor(PALETTE["battle_mercy_gauge_fill"])
             -- the unselectable mercy bar has a fucked up position in dr
             Draw.rectangle("fill", gauge_x, y + 5, ((enemy.mercy / 100) * 81), 16)
 
             if self.draw_percents and self:canSelectEnemy(enemy) then
-                Draw.setColor(PALETTE["battle_mercy_text"])
+                Draw.setColor(PALETTE["battle_mercy_gauge_text"])
                 Draw.print(math.ceil(enemy.mercy) .. "%", gauge_x + 4, y + 5, 0, 1, 0.5)
             end
         end
@@ -386,7 +400,7 @@ function BattleEnemySelect:select()
         local battle = Game.battle
         for _,act in ipairs(enemy.acts) do
             local insert = not act.hidden
-            if act.character and battle:getCurrentlySelectingMember().chara.id ~= act.character then
+            if act.character and battle:getCurrentlySelectingBattler().chara.id ~= act.character then
                 insert = false
             end
             if act.party and (#act.party > 0) then
@@ -419,6 +433,13 @@ function BattleEnemySelect:select()
         battle:pushAction("SPARE", enemies[current_enemy])
     elseif battle.state_reason == "SPELL" then
         battle:pushAction("SPELL", enemies[current_enemy], battle.state_vars["selected_spell"])
+    elseif battle.state_reason == "XACTION" then
+        local x_action = Utils.copy(battle.state_vars["selected_x_action"])
+        local enemy = enemies[current_enemy]
+        if x_action.data.default then
+            x_action.name = enemy:getXAction(self.battle:getCurrentlySelectingBattler())
+        end
+        battle:pushAction("XACTION", enemy, x_action)
     elseif battle.state_reason == "ITEM" then
         battle:pushAction("ITEM", enemies[current_enemy], battle.state_vars["selected_item"])
     else

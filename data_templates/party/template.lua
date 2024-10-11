@@ -26,9 +26,9 @@ function character:init()
     self.has_spells = false
 
     -- Whether the party member can use their X-Action
-    self.has_xact = true
+    self.has_x_action = true
     -- X-Action name (displayed in this character's spell menu)
-    self.xact_name = "?-Action"
+    self.x_action_name = "?-Action"
 
     -- Spells
     self:addSpell("heal_prayer")
@@ -65,7 +65,7 @@ function character:init()
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = nil
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.xact_color = nil
+    self.x_action_color = nil
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/kris/head"

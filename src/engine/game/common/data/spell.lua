@@ -35,6 +35,8 @@ function Spell:init()
 
     self.target = "none"
 
+    self.menu_color = COLORS.white
+
     self.tags = {}
 end
 
@@ -82,6 +84,11 @@ end
 function Spell:getCastMessage(user, target)
     return "* "..user.chara:getName().." cast "..self:getCastName().."!"
 end
+
+function Spell:getColor()
+    return Utils.unpackColor(self.menu_color)
+end
+
 
 --- *(Override)* Called when the spell is cast \
 --- The code for the effects of the spell (such as damage or healing) should go into this function

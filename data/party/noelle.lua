@@ -25,9 +25,9 @@ function character:init()
     self.has_spells = true
 
     -- Whether the party member can use their X-Action
-    self.has_xact = true
+    self.has_x_action = true
     -- X-Action name (displayed in this character's spell menu)
-    self.xact_name = "N-Action"
+    self.x_action_name = "N-Action"
 
     -- Spells
     self:addSpell("heal_prayer")
@@ -73,7 +73,7 @@ function character:init()
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = {1, 1, 0}
     -- X-Action color (for the color of X-Action menu items) (defaults to the main color)
-    self.x_act_color = {1, 1, 0.5}
+    self.x_action_color = {1, 1, 0.5}
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/noelle/head"

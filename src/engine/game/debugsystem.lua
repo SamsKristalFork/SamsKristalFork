@@ -656,7 +656,7 @@ function DebugSystem:registerSubMenus()
     
     -- add a wave stopper
     self:registerOption("wave_select", "[Stop Current Wave]", "Stop the current playing wave.", function()
-        if Game.battle:getState() == "DEFENDING" then
+        if Game.battle.state == "DEFENDING" then
             Game.battle.encounter:onWavesDone()
         end
         self:closeMenu()
@@ -664,7 +664,7 @@ function DebugSystem:registerSubMenus()
     
     -- loop through registry and add menu options for all waves
     local waves_list = {}
-    for id, _ in pairs(Registry.waves) do
+    for id,_ in pairs(Registry.waves) do
         table.insert(waves_list, id)
     end
 
@@ -672,10 +672,10 @@ function DebugSystem:registerSubMenus()
         return a < b
     end)
 
-    for _, id in ipairs(waves_list) do
+    for _,id in ipairs(waves_list) do
         self:registerOption("wave_select", id, "Start this wave.", function()
-            if Game.battle:getState() == "ACTIONSELECT" then
-                Game.battle:setState("DEFENDINGBEGIN", { id })
+            if Game.battle.state == "ACTIONSELECT" then
+                Game.battle:setState("DEFENDINGSTART", nil, {wave_override = {id}})
             end
             self:closeMenu()
         end)
@@ -683,7 +683,7 @@ function DebugSystem:registerSubMenus()
 
     self:registerMenu("sound_test", "Sound Test", "search")
 
-    for id, _ in pairs(Assets.sounds) do
+    for id,_ in pairs(Assets.sounds) do
         self:registerOption("sound_test", id, "Play this sound.", function()
             if self.playing_sound then
                 self.playing_sound:stop()
@@ -694,7 +694,7 @@ function DebugSystem:registerSubMenus()
 
     self:registerMenu("change_party", "Change Party", "search")
 
-    for id, _ in pairs(Registry.party_members) do
+    for id,_ in pairs(Registry.party_members) do
         self:registerOption("change_party", id, "Add or remove this party member from the party.", function()
             if (Game:hasPartyMember(id)) then
                 local char = Game.world:getPartyCharacterInParty(id)

@@ -146,7 +146,7 @@ end
 
 function DarkMenu:onAdd(parent)
     super.onAdd(self, parent)
-    Game.world:showHealthBars()
+    Game.world:showStatus()
     Kristal.callEvent(KRISTAL_EVENT.onDarkMenuOpen, self)
 end
 
@@ -278,7 +278,7 @@ function DarkMenu:onButtonSelect(button_index)
 end
 
 function DarkMenu:updateSelectedBoxes()
-    for _, actionbox in ipairs(Game.world.healthbar.action_boxes) do
+    for _,actionbox in ipairs(Game.world.status.action_boxes) do
         if self.state == "PARTYSELECT" and self.party_select_mode == "ALL" then
             actionbox.selected = true
             actionbox:setHeadIcon("heart")
@@ -288,8 +288,8 @@ function DarkMenu:updateSelectedBoxes()
         end
     end
     if self.state == "PARTYSELECT" then
-        Game.world.healthbar.action_boxes[self.selected_party].selected = true
-        Game.world.healthbar.action_boxes[self.selected_party]:setHeadIcon("heart")
+        Game.world.status.action_boxes[self.selected_party].selected = true
+        Game.world.status.action_boxes[self.selected_party]:setHeadIcon("heart")
     end
 end
 

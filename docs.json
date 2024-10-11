@@ -2007,8 +2007,8 @@
                 "methods": {},
                 "fields": {}
             },
-            "HealthBar": {
-                "name": "HealthBar",
+            "OverworldStatus": {
+                "name": "OverworldStatus",
                 "description": "",
                 "extends": "Object",
                 "methods": {},

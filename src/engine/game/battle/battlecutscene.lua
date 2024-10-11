@@ -7,16 +7,18 @@ local BattleCutscene, super = Class(Cutscene)
 
 local function _true() return true end
 
-function BattleCutscene:init(group, id, ...)
+function BattleCutscene:init(battle, group, id, ...)
     local scene, args = self:parseFromGetter(Registry.getBattleCutscene, group, id, ...)
+
+    self.battle = battle
 
     self.changed_sprite = {}
     self.move_targets = {}
     self.waiting_for_text = nil
     self.waiting_for_enemy_text = nil
 
-    self.last_battle_state = Game.battle.state
-    Game.battle:setState("CUTSCENE")
+    self.last_battle_state = self.battle.state
+    self.battle:setState("CUTSCENE")
 
     super.init(self, scene, unpack(args))
 end
@@ -41,19 +43,19 @@ function BattleCutscene:update()
 end
 
 function BattleCutscene:onEnd()
-    if Game.battle.cutscene == self then
-        Game.battle.cutscene = nil
+    if self.battle.cutscene == self then
+        self.battle.cutscene = nil
     end
 
-    if Game.battle.battle_ui then
-        Game.battle.battle_ui:clearEncounterText()
+    if self.battle.battle_ui then
+        self.battle:clearUIEncounterText()
 
-        Game.battle.battle_ui.encounter_text.active = true
-        Game.battle.battle_ui.encounter_text.visible = true
+--[[         self.battle.ui.encounter_text.active = true
+        self.battle.ui.encounter_text.visible = true ]]
 
-        Game.battle.battle_ui.choice_box:clearChoices()
-        Game.battle.battle_ui.choice_box.active = false
-        Game.battle.battle_ui.choice_box.visible = false
+--[[         self.battle.ui.choice_box:clearChoices()
+        self.battle.ui.choice_box.active = false
+        self.battle.ui.choice_box.visible = false ]]
     end
 
     self:resetSprites()
@@ -63,7 +65,7 @@ function BattleCutscene:onEnd()
     if self.finished_callback then
         self.finished_callback(self)
     else
-        Game.battle:setState(self.last_battle_state, "CUTSCENE")
+        self.battle:setState(self.last_battle_state, "CUTSCENE")
     end
 end
 
@@ -71,12 +73,12 @@ end
 ---@param id string The character id to search for.
 ---@return PartyBattler|EnemyBattler|nil battler The PartyBattler/EnemyBattler instance of the character if they exist, otherwise `nil`.
 function BattleCutscene:getCharacter(id)
-    for _,battler in ipairs(Game.battle.party) do
+    for _,battler in ipairs(self.battle.party) do
         if battler.chara.id == id then
             return battler
         end
     end
-    for _,battler in ipairs(Game.battle.enemies) do
+    for _,battler in ipairs(self.battle.enemies) do
         if battler.id == id then
             return battler
         end
@@ -88,7 +90,7 @@ end
 ---@return table enemies A table containing all matched EnemyBattler instances.
 function BattleCutscene:getEnemies(id)
     local result = {}
-    for _,battler in ipairs(Game.battle.enemies) do
+    for _,battler in ipairs(self.battle.enemies) do
         if battler.id == id then
             table.insert(result, battler)
         end
@@ -99,13 +101,13 @@ end
 --- Gets the character that is performing the current action.
 ---@return PartyBattler battler The PartyBattler performing the current action.
 function BattleCutscene:getUser()
-    return Game.battle.party[Game.battle:getCurrentAction().character_id]
+    return self.battle.party[self.battle:getCurrentAction().party_index]
 end
 
 --- Gets the character being targetted of the current action.
 ---@return Battler target The target Battler of the current action.
 function BattleCutscene:getTarget()
-    return Game.battle:getCurrentAction().target
+    return self.battle:getCurrentAction().target
 end
 
 --- Resets the sprites of characters who have had their sprites changed in this cutscene. \
@@ -148,25 +150,6 @@ function BattleCutscene:setAnimation(chara, anim)
     chara.overlay_sprite:setAnimation(anim, function() done = true end)
     self.changed_sprite[chara] = true
     return function() return done end
-end
-
---- *(Deprecated)* Linearly moves a character to a new position (`x`, `y`) over time at a rate of `speed` pixels per frame.
----@param chara     string|Battler  The character being moved. Accepts either a Battler instance or an id to search for.
----@param x         number          The new x-coordinate to approach.
----@param y         number          The new y-coordinate to approach.
----@param speed?    number          The amount the character's `x` and `y` should approach their new position by every frame, in pixels per frame at 30FPS. (Defaults to `4`)
----@return fun() : boolean finished A function that returns `true` once the movement has finished.
----@deprecated use :slideToSpeed() instead.
-function BattleCutscene:moveTo(chara, x, y, speed)
-    if type(chara) == "string" then
-        chara = self:getCharacter(chara)
-    end
-    if chara.x ~= x or chara.y ~= y then
-        self.move_targets[chara] = {x, y, speed or 4}
-
-        return function() return self.move_targets[chara] == nil end
-    end
-    return _true
 end
 
 --- Moves a character to a new position (`x`, `y`) over `time` seconds. \ 
@@ -223,14 +206,14 @@ function BattleCutscene:shakeCharacter(chara, x, y, friction, delay)
     return function() return chara.sprite.graphics.shake_x == 0 and chara.sprite.graphics.shake_y == 0 end
 end
 
-local function cameraShakeCheck() return Game.battle.camera.shake_x == 0 and Game.battle.camera.shake_y == 0 end
+local function cameraShakeCheck() return self.battle.camera.shake_x == 0 and self.battle.camera.shake_y == 0 end
 --- Shakes the camera by the specified `x`, `y`.
 ---@param x?        number      The amount of shake in the `x` direction. (Defaults to `4`)
 ---@param y?        number      The amount of shake in the `y` direction. (Defaults to `4`)
 ---@param friction? number      The amount that the shake should decrease by, per frame at 30FPS. (Defaults to `1`)
 ---@return fun() : boolean finished    A function that returns `true` once the shake value has returned to `0`.
 function BattleCutscene:shakeCamera(x, y, friction)
-    Game.battle:shakeCamera(x, y, friction)
+    self.battle:shakeCamera(x, y, friction)
     return cameraShakeCheck
 end
 
@@ -305,7 +288,7 @@ function BattleCutscene:setSpeaker(actor)
     self.textbox_actor = actor
 end
 
-local function waitForEncounterText() return Game.battle.battle_ui.encounter_text.text.text == "" end
+local function waitForEncounterText() return self.battle.battle_ui.encounter_text.text.text == "" end
 --- Types text on the encounter text box, and suspends the cutscene until the player progresses the dialogue. \
 --- When passing arguments to this function, the options table can be passed as the second or third argument to forgo specifying `portrait` or `actor`.
 ---@overload fun(self: BattleCutscene, text: string, options?: table): finished: fun(): boolean
@@ -341,47 +324,47 @@ function BattleCutscene:text(text, portrait, actor, options)
 
     actor = actor or self.textbox_actor
 
-    Game.battle.battle_ui.encounter_text:setActor(actor)
-    Game.battle.battle_ui.encounter_text:setFace(portrait, options["x"], options["y"])
+    self.battle.battle_ui.encounter_text:setActor(actor)
+    self.battle.battle_ui.encounter_text:setFace(portrait, options["x"], options["y"])
 
-    Game.battle.battle_ui.encounter_text:resetReactions()
+    self.battle.battle_ui.encounter_text:resetReactions()
     if options["reactions"] then
         for id,react in pairs(options["reactions"]) do
-            Game.battle.battle_ui.encounter_text:addReaction(id, react[1], react[2], react[3], react[4], react[5])
+            self.battle.battle_ui.encounter_text:addReaction(id, react[1], react[2], react[3], react[4], react[5])
         end
     end
 
-    Game.battle.battle_ui.encounter_text:resetFunctions()
+    self.battle.battle_ui.encounter_text:resetFunctions()
     if options["functions"] then
         for id,func in pairs(options["functions"]) do
-            Game.battle.battle_ui.encounter_text:addFunction(id, func)
+            self.battle.battle_ui.encounter_text:addFunction(id, func)
         end
     end
 
     if options["font"] then
         if type(options["font"]) == "table" then
             -- {font, size}
-            Game.battle.battle_ui.encounter_text:setFont(options["font"][1], options["font"][2])
+            self.battle.battle_ui.encounter_text:setFont(options["font"][1], options["font"][2])
         else
-            Game.battle.battle_ui.encounter_text:setFont(options["font"])
+            self.battle.battle_ui.encounter_text:setFont(options["font"])
         end
     else
-        Game.battle.battle_ui.encounter_text:setFont()
+        self.battle.battle_ui.encounter_text:setFont()
     end
 
-    Game.battle.battle_ui.encounter_text:setAlign(options["align"])
+    self.battle.battle_ui.encounter_text:setAlign(options["align"])
 
-    Game.battle.battle_ui.encounter_text:setSkippable(options["skip"] or options["skip"] == nil)
-    Game.battle.battle_ui.encounter_text:setAdvance(options["advance"] or options["advance"] == nil)
-    Game.battle.battle_ui.encounter_text:setAuto(options["auto"])
+    self.battle.battle_ui.encounter_text:setSkippable(options["skip"] or options["skip"] == nil)
+    self.battle.battle_ui.encounter_text:setAdvance(options["advance"] or options["advance"] == nil)
+    self.battle.battle_ui.encounter_text:setAuto(options["auto"])
 
-    Game.battle.battle_ui.encounter_text:setText(text, function()
-        Game.battle.battle_ui:clearEncounterText()
+    self.battle.battle_ui.encounter_text:setText(text, function()
+        self.battle.battle_ui:clearEncounterText()
         self:tryResume()
     end)
 
     local wait = options["wait"] or options["wait"] == nil
-    if not Game.battle.battle_ui.encounter_text.text.can_advance then
+    if not self.battle.battle_ui.encounter_text.text.can_advance then
         wait = options["wait"] -- By default, don't wait if the textbox can't advance
     end
 
@@ -410,12 +393,12 @@ function BattleCutscene:battlerText(battlers, text, options)
     if type(battlers) == "string" then
         local id = battlers
         battlers = {}
-        for _,battler in ipairs(Game.battle.enemies) do
+        for _,battler in ipairs(self.battle.enemies) do
             if battler.id == id then
                 table.insert(battlers, battler)
             end
         end
-        for _,battler in ipairs(Game.battle.party) do
+        for _,battler in ipairs(self.battle.party) do
             if battler.chara.id == id then
                 table.insert(battlers, battler)
             end
@@ -431,7 +414,7 @@ function BattleCutscene:battlerText(battlers, text, options)
             bubble = battler:spawnSpeechBubble(text, options)
         else
             bubble = SpeechBubble(text, options["x"] or 0, options["y"] or 0, options, battler)
-            Game.battle:addChild(bubble)
+            self.battle:addChild(bubble)
         end
         bubble:setAdvance(options["advance"] or options["advance"] == nil)
         bubble:setAuto(options["auto"])
@@ -463,7 +446,9 @@ function BattleCutscene:battlerText(battlers, text, options)
     end
 end
 
-local function waitForChoicer() return Game.battle.battle_ui.choice_box.done, Game.battle.battle_ui.choice_box.selected_choice end
+-- spawn standalone bubble
+
+local function waitForChoicer() return self.battle.battle_ui.choice_box.done, self.battle.battle_ui.choice_box.selected_choice end
 --- Creates a choicer with the choices specified in `choices` for the player to select from.
 ---@param choices  table A table of strings specifying the choices the player can select. Maximum of four.
 ---@param options? table A table defining additional properties to control the choicer.
@@ -475,30 +460,30 @@ local function waitForChoicer() return Game.battle.battle_ui.choice_box.done, Ga
 function BattleCutscene:choicer(choices, options)
     options = options or {}
 
-    Game.battle.battle_ui.choice_box.active = true
-    Game.battle.battle_ui.choice_box.visible = true
-    Game.battle.battle_ui.encounter_text.active = false
-    Game.battle.battle_ui.encounter_text.visible = false
+    self.battle.battle_ui.choice_box.active = true
+    self.battle.battle_ui.choice_box.visible = true
+    self.battle.battle_ui.encounter_text.active = false
+    self.battle.battle_ui.encounter_text.visible = false
 
-    Game.battle.battle_ui.choice_box.done = false
+    self.battle.battle_ui.choice_box.done = false
 
-    Game.battle.battle_ui.choice_box:clearChoices()
+    self.battle.battle_ui.choice_box:clearChoices()
     for _,choice in ipairs(choices) do
-        Game.battle.battle_ui.choice_box:addChoice(choice)
+        self.battle.battle_ui.choice_box:addChoice(choice)
     end
-    Game.battle.battle_ui.choice_box:setColors(options["color"], options["highlight"])
+    self.battle.battle_ui.choice_box:setColors(options["color"], options["highlight"])
 
     if options["wait"] or options["wait"] == nil then
         return self:wait(waitForChoicer)
     else
-        return waitForChoicer, Game.battle.battle_ui.choice_box
+        return waitForChoicer, self.battle.battle_ui.choice_box
     end
 end
 
 --- Clears the active choicebox and current encounter text, and removes all battler bubbles.
 function BattleCutscene:closeText()
-    local choice_box = Game.battle.battle_ui.choice_box
-    local text = Game.battle.battle_ui.encounter_text
+    local choice_box = self.battle.battle_ui.choice_box
+    local text = self.battle.battle_ui.encounter_text
     if choice_box.active then
         choice_box:clearChoices()
         choice_box.active = false
@@ -506,14 +491,14 @@ function BattleCutscene:closeText()
         text.active = true
         text.visible = true
     end
-    for _,battler in ipairs(Utils.mergeMultiple(Game.battle.party, Game.battle:getActiveEnemies())) do
+    for _,battler in ipairs(Utils.mergeMultiple(self.battle.party, self.battle:getActiveEnemies())) do
         if battler.bubble then
             battler:onBubbleRemove(battler.bubble)
             battler.bubble:remove()
             battler.bubble = nil
         end
     end
-    Game.battle.battle_ui:clearEncounterText()
+    self.battle.battle_ui:clearEncounterText()
 end
 
 return BattleCutscene

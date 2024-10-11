@@ -31,7 +31,7 @@ end
 -- Getters
 
 function BattleMenuSelect:getTexture(texture)
-    if self.textures[texture] then
+    if texture and self.textures[texture] then
         return self.textures[texture]
     end
 end
@@ -333,14 +333,14 @@ function BattleMenuSelect:drawCurrentItemInfo()
     if current_item then
         local tp_offset = 0, nil -- lua moment
 
-        Draw.setColor(PALETTE["battle_description"])
+        Draw.setColor(PALETTE["battle_text_description"])
         Draw.print(current_item.description, self.info_x, self.info_y)
         Draw.resetColor()
         _, tp_offset = current_item.description:gsub('\n', '\n')
         tp_offset = tp_offset + 1
     
         if current_item.tp and current_item.tp ~= 0 then
-            Draw.setColor(PALETTE["battle_tension_description"])
+            Draw.setColor(PALETTE["battle_text_tension"])
             Draw.print(math.floor((current_item.tp / Game:getMaxTension()) * 100) .. "% "..Game:getConfig("tpName"), self.info_x, self.info_y + (tp_offset * 32))
         end
     end

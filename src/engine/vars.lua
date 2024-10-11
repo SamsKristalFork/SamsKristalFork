@@ -89,6 +89,7 @@ MUSIC_PITCHES = {}
 
 -- Colors used by the engine for various things, here for customizability
 local palette_data = {
+    -- rename/reorganize some of these
     ["action_strip"]                 = { 51 / 255, 32 / 255, 51 / 255, 1 },
     ["action_fill"]                  = { 0, 0, 0, 1 },
     ["action_health_bg"]             = { 128 / 255, 0, 0, 1 },
@@ -109,27 +110,33 @@ local palette_data = {
     ["world_dark_gray"]              = { 0.25, 0.25, 0.25, 1 },
     ["world_light_gray"]             = { 0.75, 0.75, 0.75, 1 },
     ["world_header"]                 = { 1, 1, 1, 1 },
-    ["world_header_selected"]        = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["world_header_selected"]        = { 1, 160 / 255, 64 / 255, 1 },
     ["world_save_other"]             = { 68 / 255, 68 / 255, 68 / 255, 1 },
-    ["world_ability_icon"]           = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["world_ability_icon"]           = { 1, 160 / 255, 64 / 255, 1 },
 
     ["battle_text"]                  = { 1, 1, 1, 1 },
     ["battle_text_unusable"]         = { 0.5, 0.5, 0.5, 1 },
-    ["battle_description"]           = { 0.5, 0.5, 0.5, 1 },
-    ["battle_tension_description"]   = { 255 / 255, 160 / 255, 64 / 255, 1 },
+    ["battle_text_comment"]          = { 0.5, 0.5, 0.5, 1 },
+    ["battle_text_tired"]            = { 0, 178/255, 1, 1 },
+    ["battle_text_sparable"]         = { 1, 1, 0, 1 },
+    ["battle_text_description"]      = { 0.5, 0.5, 0.5, 1 },
+    ["battle_text_tension"]          = { 1, 160 / 255, 64 / 255, 1 },
     ["battle_invalid_icon"]          = { 0.5, 0.5, 0.5, 1 },
-
-    ["battle_mercy_bg"]              = { 255 / 255, 80 / 255, 32 / 255, 1 },
-    ["battle_mercy_unselectable_bg"] = { 127 / 255, 127 / 255, 127 / 255, 1},
-    ["battle_mercy_fill"]            = { 1, 1, 0, 1 },
-    ["battle_mercy_text"]            = { 128 / 255, 0, 0, 1 },
     ["battle_attack_lines"]          = { 0, 0, 0.5, 1 },
-    ["battle_enemy_comment"]         = { 128 / 255, 128 / 255, 128 / 255, 1 },
+
+    ["battle_mercy_gauge_bg"]              = { 1, 80 / 255, 32 / 255, 1 },
+    ["battle_mercy_gauge_unselectable_bg"] = { 127 / 255, 127 / 255, 127 / 255, 1},
+    ["battle_mercy_gauge_fill"]            = { 1, 1, 0, 1 },
+    ["battle_mercy_gauge_text"]            = { 128 / 255, 0, 0, 1 },
+    ["battle_mercy_gauge_disabled"]        = { 128 / 255, 0, 0, 1 },
 
     ["tension_back"]                 = { 128 / 255, 0, 0, 1 },
+    ["tension_fill"]                 = { 1, 160 / 255, 64 / 255, 1 },
+    ["tension_increase"]             = { 1, 1, 1, 1 },
     ["tension_decrease"]             = { 1, 0, 0, 1 },
-    ["tension_fill"]                 = { 255 / 255, 160 / 255, 64 / 255, 1 },
-    ["tension_max"]                  = { 255 / 255, 208 / 255, 32 / 255, 1 },
+    ["tension_marker"]               = { 1, 1, 1, 1 },
+    ["tension_flash"]                = { 1, 1, 1, 1 }, 
+    ["tension_max"]                  = { 1, 208 / 255, 32 / 255, 1 },
     ["tension_maxtext"]              = { 1, 1, 0, 1 },
 }
 PALETTE = {}

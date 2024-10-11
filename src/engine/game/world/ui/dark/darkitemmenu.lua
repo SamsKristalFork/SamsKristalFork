@@ -85,8 +85,8 @@ function DarkItemMenu:useItem(item, party)
         for index, chara in ipairs(Game.party) do
             local reaction = chara:getReaction(item, char)
             if reaction then
-                Game.world.healthbar.action_boxes[index].reaction_alpha = 50
-                Game.world.healthbar.action_boxes[index].reaction_text = reaction
+                Game.world.status.action_boxes[index].reaction_alpha = 50
+                Game.world.status.action_boxes[index].reaction_text = reaction
             end
         end
     end
@@ -98,7 +98,7 @@ function DarkItemMenu:useItem(item, party)
         end
     end
     if item.type == "key" then
-        local boxes = Game.world.healthbar.action_boxes
+        local boxes = Game.world.status.action_boxes
         for _, box in ipairs(boxes) do
             box.selected = true
         end

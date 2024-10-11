@@ -1612,12 +1612,8 @@ function Utils.dist(x1,y1, x2,y2)
     return math.sqrt(dx*dx + dy*dy)
 end
 
-function Utils.distInXDirection(len, dir)
-    return len*math.cos(dir)
-end
-
-function Utils.distInYDirection(len, dir)
-    return len*math.sin(dir)
+function Utils.transpose(dir, dist)
+    return dist*math.cos(dir), dist*math.sin(dir)
 end
 
 ---

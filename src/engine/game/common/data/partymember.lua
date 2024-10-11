@@ -33,9 +33,9 @@ function PartyMember:init()
     self.has_spells = false
 
     -- Whether the party member can use their X-Action
-    self.has_x_act = true
+    self.has_x_action = true
     -- X-Action name (displayed in this character's spell menu)
-    self.x_act_name = "?-Action"
+    self.x_action_name = "?-Action"
 
     -- Spells
     self.spells = {}
@@ -84,7 +84,7 @@ function PartyMember:init()
     -- Attack box color (for the attack area in attack mode) (defaults to darkened main color)
     self.attack_box_color = nil
     -- X-Action color (for the color of X-Action while attacking) (defaults to the main color)
-    self.x_act_color = nil
+    self.x_action_color = nil
 
     -- Head icon in the equip / power menu
     self.menu_icon = "party/kris/head"
@@ -187,9 +187,8 @@ function PartyMember:getSoulColor() return Utils.unpackColor(self.soul_color or 
 
 function PartyMember:hasAct() return self.has_act end
 function PartyMember:hasSpells() return self.has_spells end
-function PartyMember:hasXAct() return self.has_x_act end
-
-function PartyMember:getXActName() return self.x_act_name end
+function PartyMember:hasXAction() return self.has_x_action end
+function PartyMember:getXActionName() return self.x_action_name end
 
 function PartyMember:getWeaponIcon() return self.weapon_icon end
 
@@ -236,9 +235,9 @@ function PartyMember:getAttackBoxColor()
         return r * 0.5, g * 0.5, b * 0.5, a
     end
 end
-function PartyMember:getXActColor()
-    if self.xact_color then
-        return Utils.unpackColor(self.xact_color)
+function PartyMember:getXActionColor()
+    if self.x_action_color then
+        return Utils.unpackColor(self.x_action_color)
     else
         return self:getColor()
     end

@@ -480,14 +480,14 @@ end
 --- Creates the particular flash effect used when a party member uses mercy on the enemy, but the spare fails
 ---@param color table The color the enemy should flash (defaults to yellow)
 function EnemyBattler:mercyFlash(color)
-    color = color or {1, 1, 0}
+    color = color or {COLORS.yellow}
 
     local recolor = self:addFX(RecolorFX())
     Game.battle.timer:during(8/30, function()
         recolor.color = Utils.lerp(recolor.color, color, 0.12 * DTMULT)
     end, function()
         Game.battle.timer:during(8/30, function()
-            recolor.color = Utils.lerp(recolor.color, {1, 1, 1}, 0.16 * DTMULT)
+            recolor.color = Utils.lerp(recolor.color, {COLORS.white}, 0.16 * DTMULT)
         end, function()
             self:removeFX(recolor)
         end)
@@ -500,10 +500,10 @@ end
 function EnemyBattler:getNameColors()
     local result = {}
     if self:canSpare() then
-        table.insert(result, {1, 1, 0})
+        table.insert(result, PALETTE["battle_text_sparable"])
     end
     if self.tired then
-        table.insert(result, {0, 0.7, 1})
+        table.insert(result, PALETTE["battle_text_tired"])
     end
     return result
 end
@@ -790,7 +790,9 @@ function EnemyBattler:onDefeatRun(damage, battler)
 
     Game.battle.timer:after(15/30, function()
         sweat:remove()
-        self:getActiveSprite().run_away = true
+        self:getActiveSprite().visible = false
+        local run_sprite = RunAwaySprite(self:getActiveSprite())
+        self:addChild(run_sprite)
 
         Game.battle.timer:after(15/30, function()
             self:remove()

@@ -231,6 +231,12 @@ function Battle:refreshEncounterText()
     end
 end
 
+function Battle:setTensionPreview(amount)
+    if self.tension_bar then
+        self.tension_bar:setPreviewAmount(amount)
+    end
+end
+
 --- Sounds
 
 function Battle:playSound(sound)
@@ -603,7 +609,7 @@ function Battle:createUI()
 end
 
 function Battle:createTensionBar()
-    self.tension_bar = TensionBar(-25, 40, true)
+    self.tension_bar = TensionBar(nil, 40, true)
     self.tension_bar.layer = BATTLE_LAYERS["ui"]
     self:addChild(self.tension_bar)
 end
@@ -815,7 +821,7 @@ function Battle:onStateChange(old, new, reason, vars)
     elseif new == "ACTIONS" then
         self:clearUIEncounterText()
         --if self.state_reason ~= "DONTPROCESS" then
-            self:tryProcessingNextAction()
+            self:tryProcessingNextActions()
         --end
     elseif new == "ATTACKING" then
         self:clearUIEncounterText()
@@ -1202,6 +1208,10 @@ function Battle:commitActionFor(battler, action_type, target, data, extra)
     data = data or {}
     extra = extra or {}
 
+    if action_type:upper() == "XACTION" then
+        action_type = "ACT"
+    end
+
     local used_tp = 0
     if data.tp then
         local tension = Game:getTension()
@@ -1391,7 +1401,6 @@ end
 --- Start
 
 function Battle:startProcessingActions()
-    --self.has_acted = false
     -- event
 
     self.current_selecting_index = 0
@@ -1403,7 +1412,7 @@ end
 
 --- Process
 
-function Battle:tryProcessingNextAction()
+function Battle:tryProcessingNextActions()
     if self.state == "ACTIONS" and not self.currently_processing_action then
         if #self.current_actions == 0 then
             self:processQueuedActions()
@@ -1428,7 +1437,7 @@ function Battle:processQueuedActions()
 
     for _,action_group in ipairs(order) do
         if self:startActionGroup(action_group) then
-            self:tryProcessingNextAction()
+            self:tryProcessingNextActions()
             return
         end
     end
@@ -1513,9 +1522,9 @@ function Battle:processAction(action)
 
     local type = action.action_type
 
-    if type == "ATTACK" or action.action_type == "AUTOATTACK" then
+    if type == "ATTACK" or type == "AUTOATTACK" then
         return self:processAttackAction(battler, member, target, action)
-    elseif type == "ACT" then
+    elseif type == "ACT" or type == "XACTION" then
         return self:processACTAction(battler, member, target, action)
     elseif type == "SPELL" then
         return self:processSpellAction(battler, member, target, action)
@@ -1544,11 +1553,11 @@ function Battle:processAttackAction(battler, member, target, action)
     self.actions_done_timer = 1.2
 
     -- isn't this 160 for an autoattack in dr?
-    local crit = action.points == 150 and action.action ~= "AUTOATTACK"
+    local crit = action.points >= 150 and action.action ~= "AUTOATTACK"
     if crit then
         -- this gets quieter with certain sounds somehow?
         Assets.stopAndPlaySound("criticalswing")
-
+        -- move to partybattler
         for i = 1, 3 do
             local sx, sy = battler:getRelativePos(battler.width, 0)
             local sparkle = Sprite("effects/criticalswing/sparkle", sx + Utils.random(50), sy + 30 + Utils.random(30))
@@ -1738,7 +1747,7 @@ function Battle:finishAction(action, keep_animation)
                 party_index = party_index - 1
                 if party_index == 0 then
                     Utils.removeFromTable(self.current_actions, iaction)
-                    self:tryProcessingNextAction()
+                    self:tryProcessingNextActions()
                 end
             end
 
@@ -1785,7 +1794,7 @@ function Battle:finishAction(action, keep_animation)
             -- event
         end
     else
-        self:tryProcessingNextAction()
+        self:tryProcessingNextActions()
     end
 end
 
@@ -2163,6 +2172,7 @@ function Battle:initWaves()
         if not enemy_found then
             self.enemies[love.math.random(1, #self.enemies)].selected_wave = self.state_vars["wave_override"]
         end
+        waves = self.state_vars["wave_override"]
     else
         waves = self.encounter:getNextWaves()
     end
@@ -2324,7 +2334,7 @@ function Battle:startCutscene(group, id, ...)
         end
         error("Attempt to start a cutscene "..cutscene_name.." while already in cutscene "..self.cutscene.id)
     end
-    self.cutscene = BattleCutscene(group, id, ...)
+    self.cutscene = BattleCutscene(self, group, id, ...)
     return self.cutscene
 end
 
@@ -2437,7 +2447,16 @@ function Battle:update()
 end
 
 function Battle:forceDefeatEnemy(index)
-    self.enemies[index]:onDefeat()
+    -- event?
+    local invalid_states = {
+        "TRANSITION",
+        "INTRO",
+        "TRANSITIONOUT"
+    }
+    if not Utils.containsValue(invalid_states, self.state) and not self.enemies[index].done_state then
+        self.enemies[index]:onDefeat()
+        self:checkVictory()
+    end
 end
 
 function Battle:cleanupEnemies()

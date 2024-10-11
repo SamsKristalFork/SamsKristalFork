@@ -44,7 +44,7 @@ function DarkMenuPartySelect:update()
     end
 
     if self.highlight_party then
-        for i,action_box in pairs(Game.world.healthbar.action_boxes) do
+        for i, action_box in pairs(Game.world.status.action_boxes) do
             if i == self.selected_party then
                 action_box.selected = true
             else

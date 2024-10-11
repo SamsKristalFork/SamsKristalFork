@@ -42,7 +42,7 @@
 ---
 ---@field door_delay        number                          *(Used internally)* Timer variable for door transition sounds
 ---
----@field healthbar         HealthBar
+---@field status            OverworldStatus
 ---
 ---@overload fun(map?: string) : World
 local World, super = Class(Object)
@@ -138,10 +138,10 @@ function World:heal(target, amount, text)
             message = text .. " \n" .. message
         end
         Game.world:showText(message)
-    elseif self.healthbar then
-        for _, actionbox in ipairs(self.healthbar.action_boxes) do
+    elseif self.status then
+        for _, actionbox in ipairs(self.status.action_boxes) do
             if actionbox.chara.id == target.id then
-                local text = HPText("+" .. amount, self.healthbar.x + actionbox.x + 69, self.healthbar.y + actionbox.y + 15)
+                local text = HPText("+" .. amount, self.status.x + actionbox.x + 69, self.status.y + actionbox.y + 15)
                 text.layer = WORLD_LAYERS["ui"] + 1
                 Game.world:addChild(text)
                 return
@@ -159,7 +159,7 @@ function World:hurtParty(battler, amount)
     Assets.playSound("hurt")
 
     self:shakeCamera()
-    self:showHealthBars()
+    self:showStatus()
 
     if type(battler) == "number" then
         amount = battler
@@ -285,7 +285,7 @@ end
 
 --- Runs whenever the menu is closed
 function World:afterMenuClosed()
-    self:hideHealthBars()
+    self:hideStatus()
     self.menu = nil
     self:setState("GAMEPLAY")
 end
@@ -321,23 +321,23 @@ function World:replaceCall(name, index, scene)
 end
 
 --- Shows party member health bars
-function World:showHealthBars()
+function World:showStatus()
     if Game.light then return end
 
-    if self.healthbar then
-        self.healthbar:transitionIn()
+    if self.status then
+        self.status:transitionIn()
     else
-        self.healthbar = HealthBar()
-        self.healthbar.layer = WORLD_LAYERS["ui"]
-        self:addChild(self.healthbar)
+        self.status = OverworldStatus()
+        self.status.layer = WORLD_LAYERS["ui"]
+        self:addChild(self.status)
     end
 end
 
 --- Hides party member health bars
-function World:hideHealthBars()
-    if self.healthbar then
-        if not self.healthbar.animate_out then
-            self.healthbar:transitionOut()
+function World:hideStatus()
+    if self.status then
+        if not self.status.animate_out then
+            self.status:transitionOut()
         end
     end
 end
@@ -763,11 +763,11 @@ end
 ---@param party_member string|PartyMember
 ---@return OverworldActionBox?
 function World:getActionBox(party_member)
-    if not self.healthbar then return nil end
+    if not self.status then return nil end
     if type(party_member) == "string" then
         party_member = Game:getPartyMember(party_member)
     end
-    for _,box in ipairs(self.healthbar.action_boxes) do
+    for _,box in ipairs(self.status.action_boxes) do
         if box.chara == party_member then
             return box
         end
@@ -775,7 +775,7 @@ function World:getActionBox(party_member)
     return nil
 end
 
---- Creates a reaction text on a party member's healthbar (usually used for equipment and items)
+--- Creates a reaction text on a party member's status box (usually used for equipment and items)
 ---@param party_member  string|PartyMember  The party member who will react
 ---@param text          string              The text to display for the reaction
 ---@param display_time? number              The display time, in seconds, of the reaction (defaults to 5/3 seconds)
@@ -852,7 +852,7 @@ function World:setupMap(map, ...)
 
     self:updateChildList()
 
-    self.healthbar = nil
+    self.status = nil
     self.followers = {}
 
     self.camera:resetModifiers(true)

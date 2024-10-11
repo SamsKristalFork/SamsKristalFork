@@ -60,48 +60,45 @@ end
 function ActionButton:onSpellSelected()
     self.battle:clearMenuItems()
 
-    if self.battle.encounter.default_xactions and self.battler.chara:hasXAct() then
-        local spell = {
-            ["name"] = self.battle.enemies[1]:getXAction(self.battler),
-            ["target"] = "xact",
-            ["id"] = 0,
+    if self.battle.encounter.default_x_actions and self.battler.chara:hasXAction() then
+        local x_action = {
+            ["name"]    = self.battle.enemies[1]:getXAction(self.battler), -- pointless?
+            ["tp"]      = 0,
+            ["target"]  = "x_action",
             ["default"] = true,
-            ["party"] = {},
-            ["tp"] = 0
+            ["party"]   = {}
         }
 
         self.battle:addMenuItem({
-            ["name"] = self.battler.chara:getXActName() or "X-Action",
-            ["tp"] = 0,
-            ["color"] = {self.battler.chara:getXActColor()},
-            ["data"] = spell,
+            ["name"]     = self.battler.chara:getXActionName() or "X-Action",
+            ["tp"]       = 0,
+            ["color"]    = {self.battler.chara:getXActionColor()},
+            ["data"]     = x_action,
             ["callback"] = function(menu_item)
-                --self.battle.selected_xaction = spell
-                self.battle:setState("XACTENEMYSELECT", "SPELL")
+                self.battle:setState("ENEMYSELECT", "XACTION", {selected_x_action = menu_item})
             end
         })
     end
 
-    for id, action in ipairs(self.battle.encounter.x_actions) do
+    for i, action in ipairs(self.battle.encounter.x_actions) do
         if action.party == self.battler.chara.id then
-            local spell = {
-                ["name"] = action.name,
-                ["target"] = "x_act",
-                ["id"] = id,
+            local x_action = {
+                ["name"]    = action.name,
+                ["tp"]      = action.tp or 0,
+                ["target"]  = "x_action",
+                ["index"]   = i,
                 ["default"] = false,
-                ["party"] = {},
-                ["tp"] = action.tp or 0
+                ["party"]   = {}
             }
 
             self.battle:addMenuItem({
-                ["name"] = action.name,
-                ["tp"] = action.tp or 0,
+                ["name"]        = action.name,
+                ["tp"]          = action.tp or 0,
                 ["description"] = action.description,
-                ["color"] = action.color or {1, 1, 1, 1},
-                ["data"] = spell,
-                ["callback"] = function(menu_item)
-                    self.battle.selected_xaction = spell
-                    --self.battle:setState("XACTENEMYSELECT", "SPELL")
+                ["color"]       = action.color or {1, 1, 1, 1},
+                ["data"]        = x_action,
+                ["callback"]    = function(menu_item)
+                    self.battle:setState("ENEMYSELECT", "XACTION", {selected_x_action = menu_item})
                 end
             })
         end

@@ -222,7 +222,7 @@ function Draw.setShader(...)
 end
 
 function Draw.getShader()
-    love.graphics.getShader()
+    return love.graphics.getShader()
 end
 
 ---@param shader love.Shader|string
@@ -245,6 +245,10 @@ end
 
 function Draw.popShader()
     Draw.setShader(table.remove(self._shader_stack, 1))
+end
+
+function Draw.getColor()
+    return love.graphics.getColor()
 end
 
 ---@param r? number
