@@ -10,14 +10,14 @@ function BattleUI:init(battle, x, y)
 
     self:createEncounterText()
     self:createChoicebox()
-    self:createShortActText()
+    self:createShortACTText()
     self:createActionBoxes()
     self:createMenus()
     self:clearAttackBoxes()
 
     self.shown = false
 
-    self.shown_y = self.y - 157
+    self.shown_y = self.init_y - 157
 
     -- IN, OUT
     self.transition_state = nil
@@ -41,6 +41,16 @@ function BattleUI:createEncounterText()
     self:addChild(self.encounter_text)
 end
 
+function BattleUI:showEncounterText()
+    self.encounter_text.active = true
+    self.encounter_text.visible = true
+end
+
+function BattleUI:hideEncounterText()
+    self.encounter_text.active = false
+    self.encounter_text.visible = false
+end
+
 function BattleUI:createChoicebox()
     self.choice_box = Choicebox(56, 49, 529, 103, true)
     self.choice_box.active = false
@@ -48,16 +58,63 @@ function BattleUI:createChoicebox()
     self:addChild(self.choice_box)
 end
 
-function BattleUI:createShortActText()
+function BattleUI:showChoiceBox()
+    self.choice_box.active = true
+    self.choice_box.visible = true
+end
+
+function BattleUI:hideChoiceBox()
+    self.choice_box.active = false
+    self.choice_box.visible = false
+end
+
+function BattleUI:clearChoices()
+    self.choice_box:clearChoices()
+    self.choice_box:setColors()
+end
+
+function BattleUI:setChoices(choices, options)
+    options = options or {}
+
+    self:hideEncounterText()
+    self:showChoiceBox()
+    self:clearChoices()
+    for _,choice in ipairs(choices) do
+        self.choice_box:addChoice(choice)
+    end
+    self.choice_box:setColors(options["color"], options["highlight"])
+end
+
+function BattleUI:createShortACTText()
     self.short_act_text = {}
     local offset = 0
-    for i = 1, 3 do
+    for i = 1, 3 do -- match max battlers
         local text = DialogueText("", 30, 51 + offset, SCREEN_WIDTH - 30, SCREEN_HEIGHT - 53, {wrap = false, line_offset = 0})
         table.insert(self.short_act_text, text)
         self:addChild(text)
 
         offset = offset + 30
     end
+end
+
+function BattleUI:setShortACTText(text)
+    for i, itext in ipairs(self.short_act_text) do
+        itext:setText(text[i] or "")
+    end
+end
+
+function BattleUI:clearShortACTText()
+    for _,text in ipairs(self.short_act_text) do
+        text:setText("")
+    end
+end
+
+function BattleUI:shortACTsAreTyping()
+    local done = 0
+    for _,text in ipairs(self.short_act_text) do
+        if not text:isTyping() then done = done + 1 end
+    end
+    return done < #self.short_act_text
 end
 
 function BattleUI:createMenus()
@@ -134,8 +191,9 @@ function BattleUI:createAttackBoxes(attack_order)
     end
 end
 
-function BattleUI:startAttack(attackers)
-    local attack_order = Utils.pickMultiple(attackers, #attackers)
+function BattleUI:startAttack()
+    local normal_attackers = Game.battle.normal_attackers
+    local attack_order = Utils.pickMultiple(normal_attackers, #normal_attackers)
     self:clearAttackBoxes()
     self:createAttackBoxes(attack_order)
     self.attacking = true
@@ -316,6 +374,8 @@ end
 function BattleUI:updateAttacking()
     if self.battle.state == "ATTACKING" then
         if self.attacking then
+            self:updateAutoAttacking()
+
             local all_done = true
             for _,attack_box in ipairs(self.attack_boxes) do
                 if not attack_box.done then
@@ -335,12 +395,29 @@ function BattleUI:updateAttacking()
                 end
             end
     
+            if #self.battle.auto_attackers > 0 then
+                all_done = false
+            end
+
             if all_done then
                 self.attacking = false
             end
         else
-            if self.battle:areAllCurrentActionsDone() then
-                self.battle:setState("ACTIONSDONE")
+            if self.battle:areAllCurrentActionsFinished() then
+                self.battle:setState("ACTIONSFINISHED")
+            end
+        end
+    end
+end
+
+function BattleUI:updateAutoAttacking()
+    if #self.battle.attackers == #self.battle.auto_attackers and self.battle.state_vars["auto_attack_timer"] < 4 then
+        self.battle.state_vars["auto_attack_timer"] = self.battle.state_vars["auto_attack_timer"] + DTMULT
+        if self.battle.state_vars["auto_attack_timer"] >= 4 then
+            local next_attacker = self.battle.auto_attackers[1]
+            local next_action = self.battle:getActionBy(next_attacker, true)
+            if next_action then
+                self.battle:startAndProcessAction(next_action)
             end
         end
     end
@@ -377,6 +454,8 @@ function BattleUI:onKeyPressed(key)
         self:handleMenuInput(key)
     elseif self.battle.state == "ATTACKING" and self.attacking then
         self:handleAttackingInput(key)
+    elseif self.battle.state == "SHORTACTTEXT" then
+        self:handleShortACTInput(key)
     end
 end
 
@@ -431,6 +510,21 @@ function BattleUI:handleAttackingInput(key)
                     end
                 end
             end
+        end
+    end
+end
+
+function BattleUI:handleShortACTInput(key)
+    if Input.isConfirm(key) then
+        if not self:shortACTsAreTyping() then
+            self:clearShortACTText()
+
+            -- move to battle
+            for _,action in ipairs(self.battle.short_acts) do
+                self.battle:finishAction(action)
+            end
+            self.battle.short_acts = {}
+            self.battle:setState("ACTIONS", "SHORTACTTEXT")
         end
     end
 end

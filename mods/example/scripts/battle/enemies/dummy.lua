@@ -67,7 +67,7 @@ function Dummy:onACT(battler, name)
 
     elseif name == "Tell Story" then
         -- Loop through all enemies
-        for _, enemy in ipairs(Game.battle.enemies) do
+        for _,enemy in ipairs(Game.battle.enemies) do
             -- Make the enemy tired
             enemy:setTired(true)
         end
@@ -81,8 +81,8 @@ function Dummy:onACT(battler, name)
             return "* Ralsei bowed politely.\n* The dummy spiritually bowed\nin return."
         elseif battler.chara.id == "susie" then
             -- S-Action: start a cutscene (see scripts/battle/cutscenes/dummy.lua)
-            Game.battle:startActCutscene("dummy", "susie_punch")
-            return
+            --Game.battle:startACTCutscene("dummy", "susie_punch")
+            return "susie"
         else
             -- Text for any other character (like Noelle)
             return "* "..battler.chara:getName().." straightened the\ndummy's hat."

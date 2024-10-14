@@ -70,9 +70,17 @@ function Encounter:onTurnStart() end
 function Encounter:onTurnEnd() end
 
 --- *(Override)* Called when the party start performing their actions.
-function Encounter:onActionsStart() end
---- *(Override)* Called when the party finish performing their actions.
-function Encounter:onActionsEnd() end
+function Encounter:onActionsStart(party) end
+--- *(Override)* Called when the party finishes performing their actions.
+function Encounter:onActionsEnd(party) end
+
+-- add these
+function Encounter:onActionCommit(action, action_type, battler, target) end
+function Encounter:onActionUndo(action, action_type, battler, target) end
+function Encounter:onActionStart(action, action_type, battler, target) end
+function Encounter:onAction(action, action_type, battler, target) end
+function Encounter:onActionEnd(action, action_type, battler, target) end
+function Encounter:onActionEndAnimation(action, action_type, battler, target) end
 
 --- *(Override)* Called when a character's turn selecting actions begins.
 ---@param battler   PartyBattler    The battler whose turn it is.

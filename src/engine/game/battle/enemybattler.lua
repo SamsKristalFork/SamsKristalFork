@@ -480,14 +480,14 @@ end
 --- Creates the particular flash effect used when a party member uses mercy on the enemy, but the spare fails
 ---@param color table The color the enemy should flash (defaults to yellow)
 function EnemyBattler:mercyFlash(color)
-    color = color or {COLORS.yellow}
+    color = color or COLORS.yellow
 
     local recolor = self:addFX(RecolorFX())
     Game.battle.timer:during(8/30, function()
         recolor.color = Utils.lerp(recolor.color, color, 0.12 * DTMULT)
     end, function()
         Game.battle.timer:during(8/30, function()
-            recolor.color = Utils.lerp(recolor.color, {COLORS.white}, 0.16 * DTMULT)
+            recolor.color = Utils.lerp(recolor.color, COLORS.white, 0.16 * DTMULT)
         end, function()
             self:removeFX(recolor)
         end)
@@ -628,7 +628,7 @@ function EnemyBattler:onTurnEnd() end
 --- Retrieves the data of an act on this enemy by its `name`
 ---@param name string
 ---@return table
-function EnemyBattler:getAct(name)
+function EnemyBattler:getACT(name)
     for _,act in ipairs(self.acts) do
         if act.name == name then
             return act

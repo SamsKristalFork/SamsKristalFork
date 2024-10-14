@@ -460,10 +460,10 @@ local function waitForChoicer() return self.battle.battle_ui.choice_box.done, se
 function BattleCutscene:choicer(choices, options)
     options = options or {}
 
-    self.battle.battle_ui.choice_box.active = true
+--[[     self.battle.battle_ui.choice_box.active = true
     self.battle.battle_ui.choice_box.visible = true
     self.battle.battle_ui.encounter_text.active = false
-    self.battle.battle_ui.encounter_text.visible = false
+    self.battle.battle_ui.encounter_text.visible = false ]]
 
     self.battle.battle_ui.choice_box.done = false
 

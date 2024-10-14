@@ -17,9 +17,14 @@ function TensionBar:init(x, y, dont_animate)
     self.textures["text"] = Assets.getTexture("ui/battle/tp_text")
     self.font = Assets.getFont("main")
 
-    if Game.world and (not x) then
-        local left_bound = Game.world.camera:getRect()
-        x = left_bound - self.textures.outline:getWidth()
+    if not x then
+        if Game.battle then
+            local left_bound,_,_,_ = Game.battle.camera:getRect()
+            x = left_bound - self.textures.outline:getWidth()
+        elseif Game.world then
+            local left_bound,_,_,_ = Game.world.camera:getRect()
+            x = left_bound - self.textures.outline:getWidth()
+        end
     end
 
     super.init(self, x, y or 40)
@@ -29,6 +34,7 @@ function TensionBar:init(x, y, dont_animate)
 
     self.shown_x = self.width + 13
 
+    self.parallax_x = 0
     self.parallax_y = 0
 
     self.apparent = 0

@@ -129,6 +129,7 @@ end
 ---@param main? table   The main color to set for all choices, or a table of main colors for each individual choice. (Defaults to `COLORS.white`)
 ---@param hover? table  The hover color to set for all choices, or a table of hover colors for each individual choice. (Defaults to `COLORS.yellow`)
 function Choicebox:setColors(main, hover)
+    
     main = main or {1,1,1}
     if type(main[1]) == "number" then
         self.main_colors = {

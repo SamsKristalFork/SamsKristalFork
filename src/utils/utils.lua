@@ -228,6 +228,10 @@ function Utils.dump(o)
     end
 end
 
+function Utils.printDump(o)
+    return print(Utils.dump(o))
+end
+
 ---
 --- Returns every numerically indexed value of a table. \
 --- This fixes the issue with `unpack()` not returning `nil` values.

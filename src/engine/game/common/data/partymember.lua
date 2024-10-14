@@ -151,8 +151,8 @@ function PartyMember:onPowerDeselect(menu) end
 
 function PartyMember:drawPowerStat(index, x, y, menu) end
 
-function PartyMember:onEquip(item, item2) return true end
-function PartyMember:onUnequip(item, item2) return true end
+function PartyMember:onEquip(old_item, new_item) return true end
+function PartyMember:onUnequip(old_item, new_item) return true end
 
 function PartyMember:onCreateWorldActionBox(box) end
 function PartyMember:onCreateBattleActionBox(box) end
@@ -160,10 +160,23 @@ function PartyMember:onCreateBattleActionBox(box) end
 function PartyMember:onTurnStart(battler) end
 function PartyMember:onTurn(battler, undo) end
 
-function PartyMember:beforeCreateAttackSprite(enemy, points, crit) end
-function PartyMember:onCreateAttackSprite(sprite, enemy, points, crit) end
+function PartyMember:onAttack(battler, action, target, damage)
+    -- return false to end the attack with Game.battle:finishAttack()
+end
+function PartyMember:onAttackCritical(battler, points, target, damage) end
+function PartyMember:onAttackHit(battler, target, damage) end
+function PartyMember:onAttackMiss(battler, target) end
 
-function PartyMember:onAttackHit(enemy, damage) end
+function PartyMember:beforeCreateAttackSprite(target, points, crit) end
+function PartyMember:onCreateAttackSprite(sprite, target, points, crit) end
+
+-- add these
+function PartyMember:onActionCommit(action, action_type, battler, target) end
+function PartyMember:onActionUndo(action, action_type, battler, target) end
+function PartyMember:onActionStart(action, action_type, battler, target) end
+function PartyMember:onAction(action, action_type, battler, target) end
+function PartyMember:onActionEnd(action, action_type, battler, target) end
+function PartyMember:onActionEndAnimation(action, action_type, battler, target) end
 
 function PartyMember:onLevelUp(level) end
 

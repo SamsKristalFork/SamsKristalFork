@@ -45,6 +45,8 @@ function Battle:init()
     self.currently_processing_action = nil
     self.finished_actions = {}
 
+    self.short_acts = {}
+
     self.actions_done_timer = 0
 
     self.attackers = {}
@@ -80,13 +82,13 @@ function Battle:init()
     self.arena = nil
     self.soul = nil
     
-    self.music = Music()
-    self.camera = Camera(self, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, false)
+    self.cutscene = nil
+
+    self:createMusic()
+    self:createCamera()
 
     self.timer = Timer()
     self:addChild(self.timer)
-
-    self.cutscene = nil
 end
 
 -- Getters
@@ -212,6 +214,19 @@ function Battle:clearUIEncounterText()
     end
 end
 
+function Battle:setUIShortACTText(text)
+    if self.ui then
+        self.ui:setShortACTText(text)
+    end
+end
+
+function Battle:clearUIShortACTText()
+    if self.ui then
+        self.ui:clearShortACTText(text)
+    end
+end
+
+-- make this a getter and set it where it's called right now
 function Battle:setCurrentEncounterText(instant)
     if self.ui then
         if instant then
@@ -222,6 +237,7 @@ function Battle:setCurrentEncounterText(instant)
     end
 end
 
+-- just use a function for this?
 function Battle:refreshEncounterText()
     if self.state == "INTRO" or self.state_reason == "INTRO" or not self.seen_first_encounter_text then
         self.seen_first_encounter_text = true
@@ -257,11 +273,21 @@ end
 
 --- Camera
 
+function Battle:createCamera()
+    self.camera = Camera(self, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, false)
+end
+
 function Battle:shakeCamera(x, y, friction)
     self.camera:shake(x, y, friction)
 end
 
 -- zoom?
+
+--- Music
+
+function Battle:createMusic()
+    self.music = Music()
+end
 
 --- Party
 
@@ -394,6 +420,29 @@ end
 
 --- Setup
 
+function Battle:createPartyBattlers()
+    for i = 1, math.min(3, #Game.party) do
+        local member = Game.party[i]
+
+        local player = Game.world.player
+        if player and player.visible and player.actor.id == member:getActor().id then
+            self:createPartyBattlerFromCharacter(member, Game.world.player)
+        else
+            local found = false
+            for _,follower in ipairs(Game.world.followers) do
+                if follower.visible and follower.actor.id == member:getActor().id then
+                    self:createPartyBattlerFromCharacter(member, follower)
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                self:createPartyBattler(member)
+            end
+        end
+    end
+end
+
 function Battle:createPartyBattler(member, x, y)
     if not x or not y then
         x, y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
@@ -416,33 +465,13 @@ function Battle:createPartyBattlerFromCharacter(member, character)
     self:addChild(battler)
 
     table.insert(self.party, battler)
+    table.insert(self.world_characters.party, character)
     table.insert(self.world_positions.party, {x, y})
 
     character.visible = false
     --oncreate callback?
 
     return battler
-end
-
-function Battle:createPartyBattlers()
-    for i = 1, math.min(3, #Game.party) do
-        local member = Game.party[i]
-
-        local player = Game.world.player
-        if player and player.visible and player.actor.id == member:getActor().id then
-            self:createPartyBattlerFromCharacter(member, Game.world.player)
-        else
-            local found = false
-            for _,follower in ipairs(Game.world.followers) do
-                self:createPartyBattlerFromCharacter(member, follower)
-                found = true
-                break
-            end
-            if not found then
-                self:createPartyBattler(member)
-            end
-        end
-    end
 end
 
 -- Post Initialization
@@ -576,9 +605,7 @@ function Battle:startEncounter()
     if not self.encounter:onBattleInit() then
         -- don't like this
         if self.state ~= "TRANSITION" then   
-            if self.background and self.background.show then
-                self.background:show()
-            end
+            self:showBackground()
             
             if self.state ~= "INTRO" then
                 self:nextTurn()
@@ -654,6 +681,30 @@ end
 function Battle:hideTensionBar()
     if self.tension_bar then
         self.tension_bar:hide()
+    end
+end
+
+function Battle:showBackground()
+    if self.background then
+        self.background:show()
+    end
+end
+
+function Battle:fadeInBackground(speed)
+    if self.background then
+        self.background:fadeIn(speed)
+    end
+end
+
+function Battle:hideBackground()
+    if self.background then
+        self.background:hide()
+    end
+end
+
+function Battle:fadeOutBackground(speed)
+    if self.background then
+        self.background:fadeOut(speed)
     end
 end
 
@@ -758,15 +809,11 @@ end
 function Battle:onTurnStart()
     self.encounter:onTurnStart()
 
+    for _,party in ipairs(self.party) do
+        party.chara:onTurnStart(party)
+    end
     for _,enemy in ipairs(self:getActiveEnemies()) do
         enemy:onTurnStart()
-    end
-    -- party version
-
-    if self.battle_ui then
-        for _,party in ipairs(self.party) do
-            party.chara:onTurnStart(party)
-        end
     end
 
     if self.current_selecting ~= 0 and self.state ~= "ACTIONSELECT" then
@@ -797,7 +844,7 @@ end
 function Battle:onStateChange(old, new, reason, vars)
     --beforebattlestatechange kristal event/encounter callback
     if new == "TRANSITION" then
-        self.background:fadeIn()
+        self:fadeInBackground()
     elseif new == "INTRO" then
         self.seen_first_encounter_text = false
         self.state_vars["intro_timer"] = 0
@@ -830,18 +877,14 @@ function Battle:onStateChange(old, new, reason, vars)
             self:setupAttackers()
 
             if #self.attackers == 0 then
-                self.attack_done = true
-                self:setState("ACTIONSDONE")
+                self:setState("ACTIONSFINISHED")
                 return
-            else
-                self.attack_done = false
             end
 
-            self:startAttack(self.normal_attackers)
-            self.auto_attack_timer = 0 -- state var
+            self:startAttack()
+            self.state_vars["auto_attack_timer"] = 0
         else
-            self.attack_done = true
-            self:setState("ACTIONSDONE")
+            self:setState("ACTIONSFINISHED")
         end
     elseif new == "ENEMYDIALOGUE" then
         self:clearUIEncounterText()
@@ -860,7 +903,6 @@ function Battle:onStateChange(old, new, reason, vars)
             self:setState("DEFENDING")
             return
         end ]]
-
 
         self:clearUIEncounterText()
 
@@ -892,6 +934,7 @@ function Battle:onStateChange(old, new, reason, vars)
         self.current_selecting_index = 0
 
         self:hideUIElements()
+        self:fadeOutBackground()
 
         self.music:fade(0, 20/30)
         self.state_vars["transition_out_timer"] = 10
@@ -901,13 +944,13 @@ function Battle:onStateChange(old, new, reason, vars)
 end
 
 function Battle:afterStateChange()
-    if self:shouldEndWaves() then
-        self:endWaves()
+    if self:shouldFinishWaves() then
+        self:finishWaves()
     end
     self.encounter:onStateChange(old, new)
 end
 
-function Battle:shouldEndWaves()
+function Battle:shouldFinishWaves()
     local should_end = true
     if self:shouldRemoveArena() then
         for _,wave in ipairs(self.waves) do
@@ -921,7 +964,7 @@ function Battle:shouldEndWaves()
     return should_end
 end
 
-function Battle:endWaves()
+function Battle:finishWaves()
     local function exitWaves()
         for _,wave in ipairs(self.waves) do
             wave:onArenaExit()
@@ -933,7 +976,7 @@ function Battle:endWaves()
         battler.targeted = false
     end
 
-    if self:inCutscene() then
+    if self:isInCutscene() then
         self.cutscene:after(function()
             exitWaves()
             if self.state_reason == "WAVEENDED" then
@@ -959,6 +1002,7 @@ function Battle:setupAttackers()
         if action then
             local type = action.action_type
             if type == "ATTACK" then
+                self:startAction(action)
                 table.insert(self.attackers, battler)
                 table.insert(self.normal_attackers, battler)
             elseif type == "AUTOATTACK" then
@@ -969,8 +1013,8 @@ function Battle:setupAttackers()
     end
 end
 
-function Battle:startAttack(attackers)
-    self.ui:startAttack(attackers)
+function Battle:startAttack()
+    self.ui:startAttack()
 end
 
 -- move to ui?
@@ -1199,6 +1243,12 @@ function Battle:pushAction(action_type, target, data, party_index, extra)
     end
 end
 
+function Battle:pushForcedAction(battler, action, target, data, extra)
+    data = data or {}
+    data.cancellable = false
+    self:pushAction(action, target, data, self:getPartyIndex(battler.chara.id), extra)
+end
+
 --- Commit
 
 -- was commitAction
@@ -1415,14 +1465,14 @@ end
 function Battle:tryProcessingNextActions()
     if self.state == "ACTIONS" and not self.currently_processing_action then
         if #self.current_actions == 0 then
-            self:processQueuedActions()
+            self:startNextActionGroup()
         else
-            self:processCurrentActions()
+            self:processNextAction()
         end
     end
 end
 
-function Battle:processQueuedActions()
+function Battle:startNextActionGroup()
     -- this is dumb
 --[[     if self.state ~= "ACTIONS" then
         self:setState("ACTIONS", "DONTPROCESS")
@@ -1446,10 +1496,10 @@ function Battle:processQueuedActions()
     self:setState("ATTACKING")
 end
 
-function Battle:processCurrentActions()
+function Battle:processNextAction()
     while self.current_action_index <= #self.current_actions do
         local action = self:getCurrentAction()
-        if not self:isActionDone(action) then
+        if not self:isActionFinished(action) then
             self.currently_processing_action = action
             if self:processAction(action) then
                 self:finishAction(action)
@@ -1552,86 +1602,104 @@ function Battle:processAttackAction(battler, member, target, action)
 
     self.actions_done_timer = 1.2
 
-    -- isn't this 160 for an autoattack in dr?
-    local crit = action.points >= 150 and action.action ~= "AUTOATTACK"
+    local points = action.points or 0
+
+    local damage = Utils.round(target:getAttackDamage(action.damage or 0, battler, points))
+    damage = math.max(0, damage)
+
+    action.damage = damage
+
+    -- autoattacks seem to be worth 160 points in dr, they're 150 in kristal though
+    local crit = points >= 150 and action.action_type ~= "AUTOATTACK"
     if crit then
-        -- this gets quieter with certain sounds somehow?
-        Assets.stopAndPlaySound("criticalswing")
-        -- move to partybattler
-        for i = 1, 3 do
-            local sx, sy = battler:getRelativePos(battler.width, 0)
-            local sparkle = Sprite("effects/criticalswing/sparkle", sx + Utils.random(50), sy + 30 + Utils.random(30))
-            sparkle:play(4/30, true)
-            sparkle:setScale(2)
-            sparkle.layer = BATTLE_LAYERS["above_battlers"]
-            sparkle.physics.speed_x = Utils.random(2, 6)
-            sparkle.physics.friction = -0.25
-            sparkle:fadeOutSpeedAndRemove()
-            self:addChild(sparkle)
+        if not member:onAttackCritical(battler, points, target, damage) then
+            -- this gets quieter with certain sounds somehow?
+            Assets.stopAndPlaySound("criticalswing")
+            for i = 1, 3 do
+                local sx, sy = battler:getRelativePos(battler.width, 0)
+                local sparkle = Sprite("effects/criticalswing/sparkle", sx + Utils.random(50), sy + 30 + Utils.random(30))
+                sparkle:play(4/30, true)
+                sparkle:setScale(2)
+                sparkle.layer = BATTLE_LAYERS["above_battlers"]
+                sparkle.physics.speed_x = Utils.random(2, 6)
+                sparkle.physics.friction = -0.25
+                sparkle:fadeOutSpeedAndRemove()
+                battler.parent:addChild(sparkle)
+            end
         end
     end
 
-    battler:setAnimation("battle/attack", function()
+    if not member:onAttack(battler, action, target, damage) then
+        battler:setAnimation("battle/attack", function()
+            self:finishAttack(battler, action, target)
+        end)
+    end
+
+    return false
+end
+
+function Battle:finishAttack(battler, action, target)
+    battler = battler or self.attackers[1]
+    action = action or self:getActionBy(battler)
+    target = target or action.target
+    if action.action_type == "ATTACK" or action.action_type == "AUTOATTACK" then
         action.icon = nil
 
-        if action.target and action.target.done_state then
+        if target and target.done_state then
             target = self:retargetEnemy()
             action.target = target
             if not target then
-                self.cancel_attack = true
+                --self.cancel_attack = true
                 self:finishAction(action)
                 return
             end
         end
 
-        local damage = Utils.round(target:getAttackDamage(action.damage or 0, battler, action.points or 0))
-        damage = math.max(0, damage)
-
+        local damage = action.damage
         if damage > 0 then
-            target:giveAttackTension(battler, action.points or 0)
-            target:createAttackSprite(battler, action.points or 0, crit)
-            target:playDamageSound()
-            target:hurt(damage, battler)
-
-            member:onAttackHit(target, damage)
+            if not battler.chara:onAttackHit(battler, target, damage) then
+                target:giveAttackTension(battler, points)
+                target:createAttackSprite(battler, points, crit)
+                target:playDamageSound()
+                target:hurt(damage, battler)
+            end
         else
-            target:hurt(0, battler, nil, nil, nil, action.points ~= 0)
-        end
-
-        self:finishAction(action)
-
-        Utils.removeFromTable(self.normal_attackers, battler)
-        Utils.removeFromTable(self.auto_attackers, battler)
-
-        if not self:retargetEnemy() then
-            self.cancel_attack = true
-        elseif #self.normal_attackers == 0 and #self.auto_attackers > 0 then
-            local next_attacker = self.auto_attackers[1]
-
-            local next_action = self:getActionBy(next_attacker, true)
-            if next_action then
-                self:beginAction(next_action)
-                self:processAction(next_action)
+            if not battler.chara:onAttackMiss(battler, enemy) then
+                target:hurt(0, battler, nil, nil, nil, points ~= 0)
             end
         end
-    end)
-
-    return false
+    
+        self:finishAction(action)
+    
+        Utils.removeFromTable(self.normal_attackers, battler)
+        Utils.removeFromTable(self.auto_attackers, battler)
+    
+        if not self:retargetEnemy() then
+            --self.cancel_attack = true
+        elseif #self.normal_attackers == 0 and #self.auto_attackers > 0 then
+            local next_attacker = self.auto_attackers[1]
+    
+            local next_action = self:getActionBy(next_attacker, true)
+            if next_action then
+                self:startAndProcessAction(next_action)
+            end
+        end
+    end
 end
 
 function Battle:processACTAction(battler, member, target, action)
     local self_short = false
-    self.short_actions = {}
+    self.short_acts = {}
     for _,iaction in ipairs(self.current_actions) do
-        if iaction.action == "ACT" then
+        if iaction.action_type == "ACT" then
             local ibattler = self.party[iaction.party_index]
             local itarget = iaction.target
 
             if itarget then
-                local act = itarget and itarget:getAct(iaction.name)
+                local act = itarget and itarget:getACT(iaction.name)
 
                 if (act and act.short) or (itarget:getXAction(ibattler) == iaction.name and itarget:isXActionShort(ibattler)) then
-                    table.insert(self.short_actions, iaction)
+                    table.insert(self.short_acts, iaction)
                     if ibattler == battler then
                         self_short = true
                     end
@@ -1640,19 +1708,19 @@ function Battle:processACTAction(battler, member, target, action)
         end
     end
 
-    if self_short and #self.short_actions > 1 then
-        local short_text = {}
-        for _,iaction in ipairs(self.short_actions) do
+    if self_short and #self.short_acts > 1 then
+        local text = {}
+        for _,iaction in ipairs(self.short_acts) do
             local ibattler = self.party[iaction.party_index]
             local itarget = iaction.target
 
             local act_text = itarget:onShortACT(ibattler, iaction.name)
             if act_text then
-                table.insert(short_text, act_text)
+                table.insert(text, act_text)
             end
         end
 
-        self:showShortACTText(short_text)
+        self:showShortACTText(text)
     else
         local text = target:onACT(battler, action.name)
         if text then
@@ -1736,7 +1804,7 @@ function Battle:finishAction(action, keep_animation)
         self.currently_processing_action = nil
     end
 
-    local all_processed = self:areAllCurrentActionsDone()
+    local all_processed = self:areAllCurrentActionsFinished()
 
     if all_processed then
         for _,iaction in ipairs(Utils.copy(self.current_actions)) do
@@ -1827,7 +1895,7 @@ function Battle:finishActionAnimation(battler, action, callback)
             _callback()
         end
     end
-    -- event
+    -- event/table for actions that don't play the end animation
     if action.action_type ~= "ATTACK" and action.action_type ~= "AUTOATTACK" then
         if battler.sprite.anim == "battle/"..action.action_type:lower() then
             if not battler:setAnimation("battle/"..action.action_type:lower().."_end", callback) then
@@ -1844,15 +1912,11 @@ function Battle:finishActionAnimation(battler, action, callback)
     end
 end
 
-function Battle:isActionDone(action)
-    for _,action in ipairs(self.current_actions) do
-        if self.finished_actions[action] then
-            return true
-        end
-    end
+function Battle:isActionFinished(action)
+    return self.finished_actions[action]
 end
 
-function Battle:areAllCurrentActionsDone()
+function Battle:areAllCurrentActionsFinished()
     for _,action in ipairs(self.current_actions) do
         if not self.finished_actions[action] then
             return false
@@ -1902,6 +1966,7 @@ function Battle:showText(text, after)
         end
         self:setState(after_state)
     end)
+    -- don't directly call this
     self.ui.encounter_text:setAdvance(true)
 
     self:setState("TEXT")
@@ -1912,25 +1977,16 @@ function Battle:showACTText(text, dont_finish_action)
         if not dont_finish_action then
             self:finishAction()
         end
---[[         if self.should_finish_action then
-            self:finishAction(self.on_finish_action, self.on_finish_keep_animation)
-            self.on_finish_action = nil
-            self.on_finish_keep_animation = nil
-            self.should_finish_action = false
-        end ]]
-        self:setState("ACTIONS", "TEXT")
+        self:setState("ACTIONS", "ACTTEXT")
         return true
     end)
 end
 
---[[ function Battle:showShortACTText(text)
+function Battle:showShortACTText(text)
     self:setState("SHORTACTTEXT")
     self:clearUIEncounterText()
-
-    self.battle_ui.short_act_text_1:setText(text[1] or "")
-    self.battle_ui.short_act_text_2:setText(text[2] or "")
-    self.battle_ui.short_act_text_3:setText(text[3] or "")
-end ]]
+    self:setUIShortACTText(text)
+end
 
 function Battle:showInfoText(text)
     self:setUIEncounterText(text or "")
@@ -1939,7 +1995,6 @@ end
 -- Targeting
 
 function Battle:randomTargetOld()
-    -- This is "scr_randomtarget_old".
     local none_targetable = true
     for _,battler in ipairs(self.party) do
         if battler:canTarget() then
@@ -1968,7 +2023,6 @@ function Battle:randomTargetOld()
 end
 
 function Battle:randomTarget()
-    -- This is "scr_randomtarget".
     local target = self:randomTargetOld()
 
     if (not Game:getConfig("targetSystem")) and (target ~= "ALL") then
@@ -2295,16 +2349,6 @@ function Battle:createArena(x, y, shape, rotation)
     return self.arena
 end
 
-function Battle:shouldRemoveArena()
-    -- event
-    local remove_states = {
-        "DEFENDINGEND", "TRANSITIONOUT", "ACTIONSELECT", "VICTORY",
-        "INTRO", "ACTIONS", "ENEMYSELECT", "PARTYSELECT",
-        "MENUSELECT", "ATTACKING"
-    }
-    return Utils.containsValue(remove_states, self.state)
-end
-
 function Battle:removeArena(dont_return_soul)
     if self.soul and not dont_return_soul then
         self:returnSoul()
@@ -2315,9 +2359,19 @@ function Battle:removeArena(dont_return_soul)
     end
 end
 
+function Battle:shouldRemoveArena()
+    -- event
+    local remove_states = {
+        "DEFENDINGEND", "TRANSITIONOUT", "ACTIONSELECT", "VICTORY",
+        "INTRO", "ACTIONS", "ENEMYSELECT", "PARTYSELECT",
+        "MENUSELECT", "ATTACKING"
+    }
+    return Utils.containsValue(remove_states, self.state)
+end
+
 -- Cutscenes
 
-function Battle:inCutscene()
+function Battle:isInCutscene()
     return self.cutscene and not self.cutscene.ended
 end
 
@@ -2338,7 +2392,7 @@ function Battle:startCutscene(group, id, ...)
     return self.cutscene
 end
 
-function Battle:startActCutscene(group, id, dont_finish)
+function Battle:startACTCutscene(group, id, dont_finish)
     local action = self:getCurrentAction()
     local cutscene
     if type(id) ~= "string" then
@@ -2398,7 +2452,7 @@ function Battle:update()
         self:updateTransition()
     elseif state == "INTRO" then
         self:updateIntro()
-    elseif state == "ACTIONSDONE" then
+    elseif state == "ACTIONSFINISHED" then
         self.actions_done_timer = Utils.approach(self.actions_done_timer, 0, DT) -- DTMULT?
         local any_hurt = false
         for _,enemy in ipairs(self.enemies) do
@@ -2620,10 +2674,9 @@ function Battle:returnToWorld()
     if self.used_violence then
         self.encounter:setFlag("violenced", true)
     end
-    self.transition_timer = 0
-    for _,battler in ipairs(self.party) do
-        if self.world_characters.party[battler.chara.id] then
-            self.world_characters.party[battler.chara.id].visible = true
+    for i = 1, #self.party do
+        if self.world_characters.party[i] then
+            self.world_characters.party[i].visible = true
         end
     end
     for _,enemy in ipairs(self.all_enemies) do
@@ -2677,10 +2730,13 @@ function Battle:drawDebug()
 end
 
 function Battle:draw()
+    -- encounter predraw
     super.draw(self)
+    -- encounter postdraw
 
     if DEBUG_RENDER then
         self:drawDebug()
+        -- encounter debug draw
     end
 end
 

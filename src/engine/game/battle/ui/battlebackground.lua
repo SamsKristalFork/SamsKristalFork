@@ -6,8 +6,8 @@ function BattleBackground:init()
     self.progress = 0
     self.offset = 0
 
-    -- IDLE, SHOWING, HIDING
-    self.state = "IDLE"
+    -- NONE, FADEIN, FADEOUT
+    self.state = "NONE"
     self.transition_speed = nil
 
     self.debug_rect = {0, 0, 0, 0}
@@ -46,7 +46,7 @@ function BattleBackground:update()
     elseif self.state == "FADEOUT" then
         self.progress = Utils.approach(self.progress, 0, (self.transition_speed / 10) * DTMULT)
         if self.progress == 0 then
-            self.state = "IDLE"
+            self.state = "NONE"
             self.transition_speed = nil
         end
     end

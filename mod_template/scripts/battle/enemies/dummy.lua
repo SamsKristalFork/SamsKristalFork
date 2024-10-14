@@ -66,7 +66,7 @@ function Dummy:onACT(battler, name)
 
     elseif name == "Tell Story" then
         -- Loop through all enemies
-        for _, enemy in ipairs(Game.battle.enemies) do
+        for _,enemy in ipairs(Game.battle.enemies) do
             -- Make the enemy tired
             enemy:setTired(true)
         end

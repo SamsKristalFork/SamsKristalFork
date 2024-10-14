@@ -193,6 +193,10 @@ function PartyBattler:hurt(amount, exact, color, options)
     end
 end
 
+function PartyBattler:setHealth(amount)
+    return self.chara:setHealth(amount)
+end
+
 --- Removes health from the character and sets their downed HP value if necessary
 ---@param amount number
 function PartyBattler:removeHealth(amount)
